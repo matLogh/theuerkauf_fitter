@@ -1,5 +1,5 @@
 # Theuerkauf fitter
-Theuerkauf is based on the (HDTV code)[https://github.com/janmayer/hdtv], that uses Theuerkauf peak model for it's fits. This model primarily made for to fit the gamma spectra, it is a Gaussian peak with options of adding left and right tail, as well as background step underneath the peak, detailed description is available in the HDTV repository. Purpose of this repo is to have a reliable, pure C++ fitter for this peak model, that can be integrated in a projects - e.g. for optimization purposes.
+Theuerkauf is based on the [HDTV code](https://github.com/janmayer/hdtv), that uses Theuerkauf peak model for it's fits. This model primarily made for to fit the gamma spectra, it is a Gaussian peak with options of adding left and right tail, as well as background step underneath the peak, detailed description is available in the HDTV repository. Purpose of this repo is to have a reliable, pure C++ fitter for this peak model, that can be integrated in a projects - e.g. for optimization purposes.
 
 This code (re)introduces two classes `TheuerkaufPeak` and `TheuerkaufFitter`. Former contain the peak model with switched to option to switch on/off parameters, that can be in 4 states:
 * `FREE`, free parameter to be fitted,
