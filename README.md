@@ -10,22 +10,33 @@ This code (re)introduces two classes `TheuerkaufPeak` and `TheuerkaufFitter`. Fo
 `TheuerkaufFitter` is used to fit one or more Theuerkauf peaks with background, which is by default polynomial (polynomial order is adjustable) or can be supplied by user. After fitting, `Theuerkauf::Analyze(TH1&)` is useful to see the fitted spectrum with total fit function, separated total background function (including peak steps) and individual peaks. It also shows on residuals with 2sigma interval (2*sqrt(bin_content)) and 95% confidence interval calculated by ROOT fitter. 
 
 For *optimization purposes*, the ```TheuerkaufPeak::GetFWxM(const double width_multiple)``` function is useful, as it calculates width including also the tails, not just Gaussian sigma. 
-## Dependencies
+## Dependencies & install
 
-CERN ROOT framework, tested on v6.24.
+CERN ROOT framework, tested on v6.24 compiled against C++17.
 
-Example code can be build as
-```console
+### Example code
+
+Code with an example can be build as
+```bash
+git clone https://github.com/matLogh/theuerkauf_fitter.git
+cd theuerkauf_fitter
 mkdir build
 cd build
-cmake ../
+cmake ../example
 make
 ```
 
-To add it to your project, you should have ```${ROOT_LIBRARIES}``` available and should add following to your CMakeLists.txt 
-```cmake
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/theuerkauf/)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/theuerkauf/)
-```
+### Include to your project
 
+To add it to your project, you can add this project as a submodule 
+```bash
+git submodule add https://github.com/matLogh/theuerkauf_fitter.git <relative/path/where/to/place/submodule>
+git submodule init
+git submodule update
+```
+In your main ```CMakeLists.txt``` you need to have have ```${ROOT_LIBRARIES}``` and you should add
+```cmake
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/<relative/path/where/to/place/submodule>)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/<relative/path/where/to/place/submodule>)
+```
 <!--  -->
