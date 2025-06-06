@@ -1,224 +1,4 @@
-#include <cmath>
-#include <limits>
-#include <numeric>
-#include <stdexcept>
-#include <string>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#include "TCanvas.h"
-#include "TCollection.h"
-#include "TF1.h"
-#include "TFile.h"
-#include "TFitResult.h"
-#include "TGraphErrors.h"
-#include "TH1.h"
-#include "TMultiGraph.h"
-#include "TROOT.h"
-#include "TRatioPlot.h"
-#include "TVirtualFitter.h"
-#pragma GCC diagnostic pop
-
-#include "Util.hpp"
-#pragma once
-
-class TheuerkaufPeak
-{
-    friend class TheuerkaufFitter;
-
-  public:
-    enum ParamState
-    {
-        FREE,
-        FIXED,
-        NONE,
-        SAME
-    };
-
-  public:
-    TheuerkaufPeak() : fFcn(nullptr){};
-    TheuerkaufPeak(double min,
-                   double max,
-                   int    id      = 0,
-                   bool   hasTL   = false,
-                   bool   hasTR   = false,
-                   bool   hasStep = false);
-    TheuerkaufPeak(const TheuerkaufPeak &peak);
-    TheuerkaufPeak(const TheuerkaufPeak *peak);
-    TheuerkaufPeak(TheuerkaufPeak &&peak);
-    ~TheuerkaufPeak();
-
-    TheuerkaufPeak &operator=(const TheuerkaufPeak &other);
-
-    void Print() const;
-
-    const int GetID() const noexcept { return fId; };
-
-    const int GetIndex_Volume() const noexcept;
-    const int GetIndex_Position() const noexcept;
-    const int GetIndex_Sigma() const noexcept;
-    const int GetIndex_TailLeft() const noexcept;
-    const int GetIndex_TailRight() const noexcept;
-    const int GetIndex_StepHeight() const noexcept;
-    const int GetIndex_StepWidth() const noexcept;
-
-    void Draw(std::string options = "")
-    {
-        auto temp_param_index = fParamIndex;
-        this->ResetIndexes(true);
-        fFcn->Draw(options.c_str());
-        fParamIndex = temp_param_index;
-    };
-
-    void SetProperty_Volume(const ParamState prop) noexcept { fParamState[0] = prop; };
-    void SetProperty_Position(const ParamState prop) noexcept { fParamState[1] = prop; };
-    void SetProperty_Sigma(const ParamState prop) noexcept { fParamState[2] = prop; };
-    void SetProperty_TailLeft(const ParamState prop) noexcept { fParamState[3] = prop; };
-    void SetProperty_TailRight(const ParamState prop) noexcept { fParamState[4] = prop; };
-    void SetProperty_StepHeight(const ParamState prop) noexcept
-    {
-        fParamState[5] = prop;
-    };
-    void SetProperty_StepWidth(const ParamState prop) noexcept { fParamState[6] = prop; };
-
-    /// @brief It is expected to get full range of parameters in this order:
-    ///     p[fParamIndex[0]] = volume
-    ///     p[fParamIndex[1]] = position
-    ///     p[fParamIndex[2]] = sigma
-    ///     p[fParamIndex[3]] = left tail
-    ///     p[fParamIndex[4]] = right tail
-    ///     p[fParamIndex[5]] = step height
-    ///     p[fParamIndex[6]] = step width
-    /// @param x
-    /// @param p
-    /// @return
-    double Eval(const double *x, const double *p) const;
-    TF1   *GetFunction() const noexcept { return fFcn; };
-
-    /// @brief These functions are relevant only with Theuerkauf fitter, or when peak
-    /// function is coupled with another function and you want to share some parameters
-    /// between them, such as sigma etc
-    /// @param index
-    /// @return
-    TheuerkaufPeak *SetIndex_Volume(const int index);
-    TheuerkaufPeak *SetIndex_Position(const int index);
-    TheuerkaufPeak *SetIndex_Sigma(const int index);
-    TheuerkaufPeak *SetIndex_TailLeft(const int index);
-    TheuerkaufPeak *SetIndex_TailRight(const int index);
-    TheuerkaufPeak *SetIndex_StepHeight(const int index);
-    TheuerkaufPeak *SetIndex_StepWidth(const int index);
-
-    TheuerkaufPeak *SetParameter_Volume(double     val,
-                                        ParamState prop = FREE,
-                                        double     min  = -1e9,
-                                        double     max  = 1e9);
-    TheuerkaufPeak *SetParameter_Position(double     val,
-                                          ParamState prop = FREE,
-                                          double     min  = -1e9,
-                                          double     max  = 1e9);
-    TheuerkaufPeak *SetParameter_Sigma(
-        double     val,
-        ParamState prop = FREE,
-        double     min  = std::numeric_limits<double>::epsilon(),
-        double     max  = 1e9);
-    TheuerkaufPeak *SetParameter_TailLeft(double     val  = 10.,
-                                          ParamState prop = NONE,
-                                          double     min  = 0,
-                                          double     max  = 1e12);
-    TheuerkaufPeak *SetParameter_TailRight(double     val  = 10.,
-                                           ParamState prop = NONE,
-                                           double     min  = 0,
-                                           double     max  = 1e12);
-    TheuerkaufPeak *SetParameter_StepHeight(double     val,
-                                            ParamState prop = NONE,
-                                            double     min  = 0,
-                                            double     max  = 1e9);
-    TheuerkaufPeak *SetParameter_StepWidth(double     val,
-                                           ParamState prop = NONE,
-                                           double     min  = 0,
-                                           double     max  = 1e9);
-
-    bool HasStep() const noexcept { return fHasStep; };
-    bool HasTL() const noexcept { return fHasLeftTail; };
-    bool HasTR() const noexcept { return fHasRightTail; };
-
-    TheuerkaufPeak *SetRange(double min, double max);
-
-    const ParamState GetState(int index) const;
-    const ParamState GetState_Volume() const noexcept { return fParamState[0]; };
-    const ParamState GetState_Position() const noexcept { return fParamState[1]; };
-    const ParamState GetState_Sigma() const noexcept { return fParamState[2]; };
-    const ParamState GetState_TailLeft() const noexcept { return fParamState[3]; };
-    const ParamState GetState_TailRight() const noexcept { return fParamState[4]; };
-    const ParamState GetState_StepHeight() const noexcept { return fParamState[5]; };
-    const ParamState GetState_StepWidth() const noexcept { return fParamState[6]; };
-
-    const double GetVol() const noexcept
-    {
-        return fHistBinning_normalization <= 0
-                   ? fFcn->GetParameter(0)
-                   : fFcn->GetParameter(0) * fHistBinning_normalization;
-        // return fFcn->GetParameter(0);
-    };
-    const double GetPos() const noexcept { return fFcn->GetParameter(1); };
-    const double GetSig() const noexcept { return fFcn->GetParameter(2); };
-    const double GetTL() const noexcept { return fFcn->GetParameter(3); };
-    const double GetTR() const noexcept { return fFcn->GetParameter(4); };
-    const double GetSH() const noexcept { return fFcn->GetParameter(5); };
-    const double GetSW() const noexcept { return fFcn->GetParameter(6); };
-
-    const double GetFWHM() const noexcept { return sig_to_fwhm * this->GetSig(); };
-
-    // get width at x-th maximum (x=2 for FWHM, x=10 for FW at tenth maximum etc.)
-    const double GetFWxM(const double width_multiple);
-
-    const double GetVolErr() const noexcept
-    {
-        return fHistBinning_normalization <= 0
-                   ? fFcn->GetParError(0)
-                   : fFcn->GetParError(0) * fHistBinning_normalization;
-    };
-    const double GetPosErr() const noexcept { return fFcn->GetParError(1); };
-    const double GetSigErr() const noexcept { return fFcn->GetParError(2); };
-    const double GetTLErr() const noexcept { return fFcn->GetParError(3); };
-    const double GetTRErr() const noexcept { return fFcn->GetParError(4); };
-    const double GetSHErr() const noexcept { return fFcn->GetParError(5); };
-    const double GetSWErr() const noexcept { return fFcn->GetParError(6); };
-
-    const double GetFWHMErr() const noexcept { return sig_to_fwhm * this->GetSigErr(); };
-
-    void ResetIndexes(bool disregard_id = false) const;
-    void SetBinning(const double &energy_per_bin)
-    {
-        fHistBinning_normalization = 1. / energy_per_bin;
-    };
-    const double GetBinning() const noexcept { return 1. / fHistBinning_normalization; };
-
-  private:
-    double EvalNoStep(const double *x, const double *p) const;
-    double EvalStep(const double *x, const double *p) const;
-    double GetNorm(const double sigma, const double tl, const double tr) const;
-    // void SetMinMax(double min, double max);
-
-    int    fId;
-    double fXMin, fXMax;
-    bool   fHasStep, fHasLeftTail, fHasRightTail;
-    TF1   *fFcn;
-    double fHistBinning_normalization{
-        -1.}; // necessary to get the real volume, cleared of the
-
-    static const double sig_to_fwhm;
-
-    mutable double fCachedNorm{-1.}, fCachedSigma{-1.}, fCachedTL{-1.}, fCachedTR{-1.};
-    mutable std::array<int, 7>        fParamIndex;
-    mutable std::array<ParamState, 7> fParamState;
-};
+#include "TheuerkaufPeak.h"
 
 const double TheuerkaufPeak::sig_to_fwhm = 2. * TMath::Sqrt(2. * TMath::Log(2.));
 
@@ -227,7 +7,7 @@ const double TheuerkaufPeak::GetFWxM(const double width_multiple)
     auto temp_param_index = fParamIndex;
     this->ResetIndexes(true);
     const double fraction_max = fFcn->GetMaximum() / width_multiple;
-    double left  = fFcn->GetX(fraction_max, fXMin, this->GetPos(), 1E-5, 1000, false);
+    double left = fFcn->GetX(fraction_max, fXMin, this->GetPos(), 1E-5, 1000, false);
     double right = fFcn->GetX(fraction_max, this->GetPos(), fXMax, 1E-5, 1000, false);
 
     fParamIndex = temp_param_index;
@@ -239,26 +19,26 @@ TheuerkaufPeak &TheuerkaufPeak::operator=(const TheuerkaufPeak &other)
     if (this != &other) // protect against self-assignment
     {
         // Directly assign each member from 'other' to 'this'
-        this->fId                        = other.fId;
-        this->fXMin                      = other.fXMin;
-        this->fXMax                      = other.fXMax;
-        this->fHasStep                   = other.fHasStep;
-        this->fHasLeftTail               = other.fHasLeftTail;
-        this->fHasRightTail              = other.fHasRightTail;
-        this->fParamIndex                = other.fParamIndex;
-        this->fParamState                = other.fParamState;
+        this->fId = other.fId;
+        this->fXMin = other.fXMin;
+        this->fXMax = other.fXMax;
+        this->fHasStep = other.fHasStep;
+        this->fHasLeftTail = other.fHasLeftTail;
+        this->fHasRightTail = other.fHasRightTail;
+        this->fParamIndex = other.fParamIndex;
+        this->fParamState = other.fParamState;
         this->fHistBinning_normalization = other.fHistBinning_normalization;
-        this->fCachedNorm                = other.fCachedNorm;
-        this->fCachedSigma               = other.fCachedSigma;
-        this->fCachedTL                  = other.fCachedTL;
-        this->fCachedTR                  = other.fCachedTR;
+        this->fCachedNorm = other.fCachedNorm;
+        this->fCachedSigma = other.fCachedSigma;
+        this->fCachedTL = other.fCachedTL;
+        this->fCachedTR = other.fCachedTR;
 
-        if (fFcn != nullptr) delete fFcn;
+        if (fFcn != nullptr)
+            delete fFcn;
 
         std::string fcn_name = "theurekauf_" + std::to_string(fId);
-        this->fFcn =
-            new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this,
-                    &TheuerkaufPeak::Eval, fXMin, fXMax, 7, "TheuerkaufPeak", "Eval");
+        this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin,
+                             fXMax, 7, "TheuerkaufPeak", "Eval");
 
         this->fFcn->SetNpx(10000);
         this->fFcn->SetLineColor(GetColor());
@@ -276,26 +56,25 @@ TheuerkaufPeak &TheuerkaufPeak::operator=(const TheuerkaufPeak &other)
 
 TheuerkaufPeak::TheuerkaufPeak(TheuerkaufPeak &&peak)
 {
-    this->fId           = peak.fId;
-    this->fXMin         = peak.fXMin;
-    this->fXMax         = peak.fXMax;
-    this->fHasStep      = peak.fHasStep;
-    this->fHasLeftTail  = peak.fHasLeftTail;
+    this->fId = peak.fId;
+    this->fXMin = peak.fXMin;
+    this->fXMax = peak.fXMax;
+    this->fHasStep = peak.fHasStep;
+    this->fHasLeftTail = peak.fHasLeftTail;
     this->fHasRightTail = peak.fHasRightTail;
-    this->fParamIndex   = peak.fParamIndex;
-    this->fParamState   = peak.fParamState;
+    this->fParamIndex = peak.fParamIndex;
+    this->fParamState = peak.fParamState;
 
     this->fHistBinning_normalization = peak.fHistBinning_normalization;
-    this->fCachedNorm                = peak.fCachedNorm;
-    this->fCachedSigma               = peak.fCachedSigma;
-    this->fCachedTL                  = peak.fCachedTL;
-    this->fCachedTR                  = peak.fCachedTR;
+    this->fCachedNorm = peak.fCachedNorm;
+    this->fCachedSigma = peak.fCachedSigma;
+    this->fCachedTL = peak.fCachedTL;
+    this->fCachedTR = peak.fCachedTR;
 
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
-    this->fFcn =
-        new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this,
-                &TheuerkaufPeak::Eval, fXMin, fXMax, 7, "TheuerkaufPeak", "Eval");
+    this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
+                         7, "TheuerkaufPeak", "Eval");
     this->fFcn->SetNpx(10000);
     this->fFcn->SetLineColor(GetColor());
     for (int i = 0; i < 7; i++)
@@ -310,26 +89,25 @@ TheuerkaufPeak::TheuerkaufPeak(TheuerkaufPeak &&peak)
 
 TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak &peak)
 {
-    this->fId           = peak.fId;
-    this->fXMin         = peak.fXMin;
-    this->fXMax         = peak.fXMax;
-    this->fHasStep      = peak.fHasStep;
-    this->fHasLeftTail  = peak.fHasLeftTail;
+    this->fId = peak.fId;
+    this->fXMin = peak.fXMin;
+    this->fXMax = peak.fXMax;
+    this->fHasStep = peak.fHasStep;
+    this->fHasLeftTail = peak.fHasLeftTail;
     this->fHasRightTail = peak.fHasRightTail;
-    this->fParamIndex   = peak.fParamIndex;
-    this->fParamState   = peak.fParamState;
+    this->fParamIndex = peak.fParamIndex;
+    this->fParamState = peak.fParamState;
 
     this->fHistBinning_normalization = peak.fHistBinning_normalization;
-    this->fCachedNorm                = peak.fCachedNorm;
-    this->fCachedSigma               = peak.fCachedSigma;
-    this->fCachedTL                  = peak.fCachedTL;
-    this->fCachedTR                  = peak.fCachedTR;
+    this->fCachedNorm = peak.fCachedNorm;
+    this->fCachedSigma = peak.fCachedSigma;
+    this->fCachedTL = peak.fCachedTL;
+    this->fCachedTR = peak.fCachedTR;
 
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
-    this->fFcn =
-        new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this,
-                &TheuerkaufPeak::Eval, fXMin, fXMax, 7, "TheuerkaufPeak", "Eval");
+    this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
+                         7, "TheuerkaufPeak", "Eval");
     this->fFcn->SetNpx(10000);
     this->fFcn->SetLineColor(GetColor());
     for (int i = 0; i < 7; i++)
@@ -344,28 +122,27 @@ TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak &peak)
 
 TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak *peak)
 {
-    this->fId           = peak->fId;
-    this->fXMin         = peak->fXMin;
-    this->fXMax         = peak->fXMax;
-    this->fHasStep      = peak->fHasStep;
-    this->fHasLeftTail  = peak->fHasLeftTail;
+    this->fId = peak->fId;
+    this->fXMin = peak->fXMin;
+    this->fXMax = peak->fXMax;
+    this->fHasStep = peak->fHasStep;
+    this->fHasLeftTail = peak->fHasLeftTail;
     this->fHasRightTail = peak->fHasRightTail;
-    this->fParamIndex   = peak->fParamIndex;
-    this->fParamState   = peak->fParamState;
+    this->fParamIndex = peak->fParamIndex;
+    this->fParamState = peak->fParamState;
 
     this->fHistBinning_normalization = peak->fHistBinning_normalization;
-    this->fCachedNorm                = peak->fCachedNorm;
-    this->fCachedSigma               = peak->fCachedSigma;
-    this->fCachedTL                  = peak->fCachedTL;
-    this->fCachedTR                  = peak->fCachedTR;
-    this->fParamIndex                = peak->fParamIndex;
-    this->fParamState                = peak->fParamState;
+    this->fCachedNorm = peak->fCachedNorm;
+    this->fCachedSigma = peak->fCachedSigma;
+    this->fCachedTL = peak->fCachedTL;
+    this->fCachedTR = peak->fCachedTR;
+    this->fParamIndex = peak->fParamIndex;
+    this->fParamState = peak->fParamState;
 
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
-    this->fFcn =
-        new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this,
-                &TheuerkaufPeak::Eval, fXMin, fXMax, 7, "TheuerkaufPeak", "Eval");
+    this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
+                         7, "TheuerkaufPeak", "Eval");
     this->fFcn->SetNpx(10000);
     this->fFcn->SetLineColor(GetColor());
     for (int i = 0; i < 7; i++)
@@ -378,15 +155,13 @@ TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak *peak)
     }
 }
 
-TheuerkaufPeak::TheuerkaufPeak(
-    double min, double max, int id, bool hasTL, bool hasTR, bool hasStep)
-    : fId(id), fHasLeftTail(hasTL), fHasRightTail(hasTR), fHasStep(hasStep), fXMin(min),
-      fXMax(max)
+TheuerkaufPeak::TheuerkaufPeak(double min, double max, int id, bool hasTL, bool hasTR, bool hasStep)
+    : fId(id), fHasLeftTail(hasTL), fHasRightTail(hasTR), fHasStep(hasStep), fXMin(min), fXMax(max)
 {
     assert(id >= 0);
     std::string fcn_name = "theurekauf_" + std::to_string(id);
-    fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this,
-                   &TheuerkaufPeak::Eval, min, max, 7, "TheuerkaufFitter", "Eval");
+    fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, min, max, 7,
+                   "TheuerkaufFitter", "Eval");
     fFcn->SetNpx(10000);
     fFcn->SetLineColor(GetColor());
 
@@ -402,7 +177,10 @@ TheuerkaufPeak::TheuerkaufPeak(
 
 TheuerkaufPeak::~TheuerkaufPeak()
 {
-    if (fFcn) { delete fFcn; }
+    if (fFcn)
+    {
+        delete fFcn;
+    }
 }
 
 inline const int TheuerkaufPeak::GetIndex_Volume() const noexcept
@@ -480,8 +258,10 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetRange(double min, double max)
 
     double _min, _max;
     fFcn->GetParLimits(1, _min, _max);
-    if (_min < min) _min = min;
-    if (_max > max) _max = max;
+    if (_min < min)
+        _min = min;
+    if (_max > max)
+        _max = max;
     fFcn->SetParLimits(1, _min, _max);
 
     return this;
@@ -512,10 +292,14 @@ inline void TheuerkaufPeak::Print() const
     {
         std::cout << fFcn->GetParName(i) << " ";
         std::cout << "index " << fParamIndex[i] << " ";
-        if (GetState(i) == FREE) std::cout << "FREE  ";
-        if (GetState(i) == FIXED) std::cout << "FIXED ";
-        if (GetState(i) == NONE) std::cout << "NONE  ";
-        if (GetState(i) == SAME) std::cout << "SAME  ";
+        if (GetState(i) == FREE)
+            std::cout << "FREE  ";
+        if (GetState(i) == FIXED)
+            std::cout << "FIXED ";
+        if (GetState(i) == NONE)
+            std::cout << "NONE  ";
+        if (GetState(i) == SAME)
+            std::cout << "SAME  ";
         std::cout << fFcn->GetParameter(i) << " ";
         double min, max;
         fFcn->GetParLimits(i, min, max);
@@ -524,16 +308,13 @@ inline void TheuerkaufPeak::Print() const
     std::cout << std::endl;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double     val,
-                                                           ParamState prop,
-                                                           double     min,
-                                                           double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double val, ParamState prop, double min, double max)
 {
     assert(prop != NONE);
     assert(val >= min && val <= max);
 
-    int         index = 0;
-    std::string name  = std::string("vol_") + "_" + std::to_string(fId);
+    int index = 0;
+    std::string name = std::string("vol_") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
 
     fParamState[index] = prop;
@@ -543,7 +324,9 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double     val,
         fFcn->ReleaseParameter(index);
         fFcn->SetParameter(index, val);
         break;
-    case FIXED: fFcn->FixParameter(index, val); break;
+    case FIXED:
+        fFcn->FixParameter(index, val);
+        break;
     default:
         throw std::runtime_error("It is not allowed to have volume set as NONE or SAME!");
     }
@@ -552,18 +335,17 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double     val,
-                                                             ParamState prop,
-                                                             double     min,
-                                                             double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double val, ParamState prop, double min, double max)
 {
     assert(prop != NONE && prop != SAME);
-    if (min < fXMin) min = fXMin;
-    if (max > fXMax) max = fXMax;
+    if (min < fXMin)
+        min = fXMin;
+    if (max > fXMax)
+        max = fXMax;
     assert(val >= min && val <= max);
 
-    int         index = 1;
-    std::string name  = std::string("pos_") + "_" + std::to_string(fId);
+    int index = 1;
+    std::string name = std::string("pos_") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
     switch (prop)
@@ -572,7 +354,9 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double     val,
         fFcn->ReleaseParameter(index);
         fFcn->SetParameter(index, val);
         break;
-    case FIXED: fFcn->FixParameter(index, val); break;
+    case FIXED:
+        fFcn->FixParameter(index, val);
+        break;
     default:
         throw std::runtime_error("It is not allowed to have volume set as NONE or SAME!");
     }
@@ -581,15 +365,12 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double     val,
-                                                          ParamState prop,
-                                                          double     min,
-                                                          double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
-    int         index = 2;
-    std::string name  = std::string("sig_") + "_" + std::to_string(fId);
+    int index = 2;
+    std::string name = std::string("sig_") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
     switch (prop)
@@ -598,7 +379,9 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double     val,
         fFcn->ReleaseParameter(index);
         fFcn->SetParameter(index, val);
         break;
-    case FIXED: fFcn->FixParameter(index, val); break;
+    case FIXED:
+        fFcn->FixParameter(index, val);
+        break;
     case NONE:
         std::cerr << "Setting sigma to NONE will turns peak to delta function, are you "
                      "sure this is what you wanted to do?"
@@ -615,15 +398,12 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double     val,
-                                                             ParamState prop,
-                                                             double     min,
-                                                             double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
-    int         index = 3;
-    std::string name  = std::string("TL__") + "_" + std::to_string(fId);
+    int index = 3;
+    std::string name = std::string("TL__") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
     switch (prop)
@@ -652,15 +432,12 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double     val,
-                                                              ParamState prop,
-                                                              double     min,
-                                                              double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
-    int         index = 4;
-    std::string name  = std::string("TR__") + "_" + std::to_string(fId);
+    int index = 4;
+    std::string name = std::string("TR__") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
     switch (prop)
@@ -689,18 +466,15 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double     val,
-                                                               ParamState prop,
-                                                               double     min,
-                                                               double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
-    int         index = 5;
-    std::string name  = std::string("SH__") + "_" + std::to_string(fId);
+    int index = 5;
+    std::string name = std::string("SH__") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
-    bool hasStep       = (prop != NONE);
+    bool hasStep = (prop != NONE);
     if (fHasStep != hasStep)
     {
         fHasStep = hasStep;
@@ -732,18 +506,15 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double     val,
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepWidth(double     val,
-                                                              ParamState prop,
-                                                              double     min,
-                                                              double     max)
+inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepWidth(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
-    int         index = 6;
-    std::string name  = std::string("SW__") + "_" + std::to_string(fId);
+    int index = 6;
+    std::string name = std::string("SW__") + "_" + std::to_string(fId);
     fFcn->SetParName(index, name.c_str());
     fParamState[index] = prop;
-    bool hasStep       = (prop != NONE);
+    bool hasStep = (prop != NONE);
     if (fHasStep != hasStep)
     {
         fHasStep = hasStep;
@@ -782,19 +553,28 @@ double TheuerkaufPeak::Eval(const double *x, const double *p) const
 
 double TheuerkaufPeak::EvalNoStep(const double *x, const double *p) const
 {
-    double vol   = p[fParamIndex[0]];
-    double dx    = *x - p[fParamIndex[1]];
+    double vol = p[fParamIndex[0]];
+    double dx = *x - p[fParamIndex[1]];
     double sigma = p[fParamIndex[2]];
 
-    double tl   = p[fParamIndex[3]];
-    double tr   = p[fParamIndex[4]];
+    double tl = p[fParamIndex[3]];
+    double tr = p[fParamIndex[4]];
     double norm = GetNorm(sigma, tl, tr);
     double _x;
 
     // Peak function
-    if (dx < -tl && fHasLeftTail) { _x = tl / (sigma * sigma) * (dx + tl / 2.0); }
-    else if (dx < tr || !fHasRightTail) { _x = -dx * dx / (2.0 * sigma * sigma); }
-    else { _x = -tr / (sigma * sigma) * (dx - tr / 2.0); }
+    if (dx < -tl && fHasLeftTail)
+    {
+        _x = tl / (sigma * sigma) * (dx + tl / 2.0);
+    }
+    else if (dx < tr || !fHasRightTail)
+    {
+        _x = -dx * dx / (2.0 * sigma * sigma);
+    }
+    else
+    {
+        _x = -tr / (sigma * sigma) * (dx - tr / 2.0);
+    }
 
     return vol * norm * std::exp(_x);
 }
@@ -805,20 +585,22 @@ double TheuerkaufPeak::EvalStep(const double *x, const double *p) const
 
     if (fHasStep)
     {
-        double vol   = p[fParamIndex[0]];
-        double dx    = *x - p[fParamIndex[1]];
+        double vol = p[fParamIndex[0]];
+        double dx = *x - p[fParamIndex[1]];
         double sigma = p[fParamIndex[2]];
-        double tl    = p[fParamIndex[3]];
-        double tr    = p[fParamIndex[4]];
-        double sh    = p[fParamIndex[5]];
-        double sw    = p[fParamIndex[6]];
+        double tl = p[fParamIndex[3]];
+        double tr = p[fParamIndex[4]];
+        double sh = p[fParamIndex[5]];
+        double sw = p[fParamIndex[6]];
 
         double norm = GetNorm(sigma, tl, tr);
 
-        return vol * norm * sh *
-               (M_PI / 2. + std::atan(sw * dx / (std::sqrt(2.) * sigma)));
+        return vol * norm * sh * (M_PI / 2. + std::atan(sw * dx / (std::sqrt(2.) * sigma)));
     }
-    else { return 0.0; }
+    else
+    {
+        return 0.0;
+    }
 }
 
 double TheuerkaufPeak::GetNorm(const double sigma, const double tl, const double tr) const
@@ -836,7 +618,10 @@ double TheuerkaufPeak::GetNorm(const double sigma, const double tl, const double
         vol = (sigma * sigma) / tl * std::exp(-(tl * tl) / (2.0 * sigma * sigma));
         vol += std::sqrt(M_PI / 2.0) * sigma * std::erf(tl / (std::sqrt(2.0) * sigma));
     }
-    else { vol = std::sqrt(M_PI / 2.0) * sigma; }
+    else
+    {
+        vol = std::sqrt(M_PI / 2.0) * sigma;
+    }
 
     // Contribution from right tail + right half of truncated gaussian
     if (fHasRightTail)
@@ -844,11 +629,14 @@ double TheuerkaufPeak::GetNorm(const double sigma, const double tl, const double
         vol += (sigma * sigma) / tr * std::exp(-(tr * tr) / (2.0 * sigma * sigma));
         vol += std::sqrt(M_PI / 2.0) * sigma * std::erf(tr / (std::sqrt(2.0) * sigma));
     }
-    else { vol += std::sqrt(M_PI / 2.0) * sigma; }
+    else
+    {
+        vol += std::sqrt(M_PI / 2.0) * sigma;
+    }
 
     fCachedSigma = sigma;
-    fCachedTL    = tl;
-    fCachedTR    = tr;
+    fCachedTL = tl;
+    fCachedTR = tr;
     // fCachedNorm  = fHistBinning_normalization <= 0 ? 1. / vol :
     // fHistBinning_normalization / vol;
     fCachedNorm = 1. / vol;
@@ -858,7 +646,8 @@ double TheuerkaufPeak::GetNorm(const double sigma, const double tl, const double
 
 void TheuerkaufPeak::ResetIndexes(bool disregard_id) const
 {
-    if (disregard_id) std::iota(fParamIndex.begin(), fParamIndex.end(), 0);
+    if (disregard_id)
+        std::iota(fParamIndex.begin(), fParamIndex.end(), 0);
     else
         std::iota(fParamIndex.begin(), fParamIndex.end(), fId * 7);
 };
@@ -869,130 +658,18 @@ void TheuerkaufPeak::ResetIndexes(bool disregard_id) const
 //! ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //! ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class TheuerkaufFitter
+TheuerkaufFitter::~TheuerkaufFitter()
 {
-  public:
-    TheuerkaufFitter(double min, double max);
-    ~TheuerkaufFitter();
-
-    /// @brief Add peak to fitter
-    /// @param position rought position of the peak
-    /// @param leftTail has left tail?
-    /// @param rightTail has right tail?
-    /// @param step has step?
-    /// @return id of the peak
-    const int AddPeak(const double position,
-                      const bool   leftTail,
-                      const bool   rightTail,
-                      const bool   step);
-
-    /// @brief This function will create a copy of the peak and set id to one of the
-    /// internal structure
-    /// @param peak
-    /// @return id of added peak
-    const int         AddPeak(const TheuerkaufPeak &peak);
-    TheuerkaufFitter *SetBacground(std::unique_ptr<TF1> &bcg_fcn) noexcept;
-
-    /// @brief get peak based on its ID
-    /// @param id
-    /// @return
-    TheuerkaufPeak *GetPeak(const int id);
-
-    /// @brief Get number of peaks
-    /// @return
-    const int GetNPeaks();
-
-    /// @brief Set internal polynomial background
-    /// @param poly_order number of parameters (poly_order=0 no background, poly_order=3
-    /// quadratic etc)
-    /// @return
-    TheuerkaufFitter *SetBacgroundPoly(unsigned int poly_order) noexcept;
-
-    /// @brief remove function set by the TheuerkaufFitter::SetBackground, internal
-    /// polynomial background remains
-    /// @return
-    TheuerkaufFitter *RemoveBackground() noexcept;
-
-    /// @brief If true, allows peaks to have negative volume
-    /// @param allow_negative_peaks
-    /// @return
-    TheuerkaufFitter *AllowNegativePeaks(bool allow_negative_peaks) noexcept;
-
-    /// @brief Change range of the fitter
-    /// @param min X min
-    /// @param max X max
-    /// @return
-    TheuerkaufFitter *SetRange(double min, double max);
-
-    double Eval(const double *x, const double *p) const;
-
-    /// @brief Fit histogram. Only here the total function is being computed.
-    /// @param histFit histogram to be fitted
-    /// @param options
-    ///        "OUTPUT_NONE" - do not print fit results,
-    ///        "OUTPUT_STANDARD" - print standard output,
-    ///        "OUTPUT_ROOT" - print ROOT fit output,
-    ///        "OUTPUT_PLAIN" - plain output without table (id, pos, pos_err, fwhm,
-    ///        fwhm_err, vol, vol_err) "LIKELIHOOD" - use likelihood in fitting, "POISSON"
-    ///        - use likelihood in fitting
-    void Fit(TH1 *histFit, std::string options = "");
-
-    /// @brief Draw canvas with 2 pads: first with fitted spectrum, summed fit function
-    /// and individual peaks; second pad with residuals, confidence intervals and 2 sigma
-    /// bands
-    /// @param histAna
-    /// @param toPrint
-    void          Analyze(TH1 *histAna, TPad *toPrint);
-    TFitResultPtr GetFitResults() { return fFitResults; };
-
-    std::shared_ptr<TF1> GetTotalFunction() { return fSumFunc; };
-
-    // std::vector<std::pair<double,double>> GetPeaksIntegral(); //Filippo
-    void PrintFitResults() const;
-    void PrintFitResults_plain(std::ostream &os = std::cout) const;
-
-    ///@brief Set output verbosity
-    ///@param verbose 0 - do not print anything, 1 - standard print, 2 - print all
-    void SetVerbosity(const int verbose) { fVerbose = verbose; };
-
-  private:
-    double    EvalTotalBacground(const double *x, const double *p);
-    const int GetNumParams() const noexcept
-    {
-        return static_cast<int>(fPeaks.size() * 7 + fPolyBcgDegree);
-    };
-    void HandleParameterStates();
-    void DistributeParametersToPeaks();
-
-  private:
-    int           fVerbose;
-    double        fXMin, fXMax;
-    double        fChiSquare;
-    bool          fOnlypositivepeaks;
-    unsigned int  fPolyBcgDegree;
-    TFitResultPtr fFitResults;
-    /// @brief points to the fitter following the main Fit
-    TVirtualFitter *fFitter;
-
-    std::shared_ptr<TF1> fSumFunc;
-    std::unique_ptr<TF1> fBcgFunc;
-    std::shared_ptr<TH1> fTempHist;
-
-    std::vector<TheuerkaufPeak>           fPeaks;
-    std::vector<std::unique_ptr<TObject>> fTempObjects;
-    std::vector<TheuerkaufPeak>           fTempPeaks;
-};
-
-TheuerkaufFitter::~TheuerkaufFitter() {}
+}
 
 TheuerkaufFitter::TheuerkaufFitter(double min, double max) : fXMin(min), fXMax(max)
 {
-    fVerbose           = 1;
-    fSumFunc           = nullptr;
-    fBcgFunc           = nullptr;
-    fPolyBcgDegree     = 2;
+    fVerbose = 1;
+    fSumFunc = nullptr;
+    fBcgFunc = nullptr;
+    fPolyBcgDegree = 2;
     fOnlypositivepeaks = true;
-    fChiSquare         = std::numeric_limits<double>::quiet_NaN();
+    fChiSquare = std::numeric_limits<double>::quiet_NaN();
 }
 
 TheuerkaufFitter *TheuerkaufFitter::SetBacground(std::unique_ptr<TF1> &bcg_fcn) noexcept
@@ -1005,20 +682,20 @@ void TheuerkaufFitter::PrintFitResults_plain(std::ostream &os) const
 {
     for (auto &peak : fPeaks)
     {
-        std::string _id       = std::to_string(peak.GetID());
-        std::string _pos      = std::to_string(peak.GetPos());
-        std::string _pos_e    = std::to_string(peak.GetPosErr());
-        std::string _fwhm     = std::to_string(peak.GetFWHM());
+        std::string _id = std::to_string(peak.GetID());
+        std::string _pos = std::to_string(peak.GetPos());
+        std::string _pos_e = std::to_string(peak.GetPosErr());
+        std::string _fwhm = std::to_string(peak.GetFWHM());
         std::string _fwhm_err = std::to_string(peak.GetFWHMErr());
-        std::string _vol      = std::to_string(peak.GetVol());
-        std::string _vol_err  = std::to_string(peak.GetVolErr());
-        std::string _tl       = peak.HasTL() ? std::to_string(peak.GetTL()) : "--";
-        std::string _tr       = peak.HasTR() ? std::to_string(peak.GetTR()) : "--";
-        std::string _sw       = peak.HasStep() ? std::to_string(peak.GetSW()) : "--";
-        std::string _sh       = peak.HasStep() ? std::to_string(peak.GetSH()) : "--";
+        std::string _vol = std::to_string(peak.GetVol());
+        std::string _vol_err = std::to_string(peak.GetVolErr());
+        std::string _tl = peak.HasTL() ? std::to_string(peak.GetTL()) : "--";
+        std::string _tr = peak.HasTR() ? std::to_string(peak.GetTR()) : "--";
+        std::string _sw = peak.HasStep() ? std::to_string(peak.GetSW()) : "--";
+        std::string _sh = peak.HasStep() ? std::to_string(peak.GetSH()) : "--";
 
-        os << _id << " " << _pos << " " << _pos_e << " " << _fwhm << " " << _fwhm_err
-           << " " << _vol << " " << _vol_err << std::endl;
+        os << _id << " " << _pos << " " << _pos_e << " " << _fwhm << " " << _fwhm_err << " " << _vol << " " << _vol_err
+           << std::endl;
     }
 }
 
@@ -1030,11 +707,11 @@ void TheuerkaufFitter::PrintFitResults() const
 
     std::string _status;
 
-    if (fFitResults->IsValid()) _status = "Fit OK";
+    if (fFitResults->IsValid())
+        _status = "Fit OK";
     else
-        _status =
-            "Fit not valid, minimizer status " + std::to_string(fFitResults->Status());
-    std::string _chi2  = "chi2 " + std::to_string(fChiSquare);
+        _status = "Fit not valid, minimizer status " + std::to_string(fFitResults->Status());
+    std::string _chi2 = "chi2 " + std::to_string(fChiSquare);
     std::string _rchi2 = "rchi2 " + std::to_string(fChiSquare / fSumFunc.get()->GetNDF());
     std::string _errmat = "error matrix ";
 
@@ -1057,7 +734,9 @@ void TheuerkaufFitter::PrintFitResults() const
         _errmat += "accurate";
         _matrix_status = tabulate::Color::green;
         break;
-    default: _errmat += "unknown"; _matrix_status = tabulate::Color::red;
+    default:
+        _errmat += "unknown";
+        _matrix_status = tabulate::Color::red;
     }
 
     std::string _hname = fTempHist != nullptr ? fTempHist->GetName() : "unknown hist";
@@ -1088,22 +767,21 @@ void TheuerkaufFitter::PrintFitResults() const
     //            .border_bottom("-")
     //            .border_left(" ")
     //            .border_right(" ");
-    peak_parameters.add_row({"Peak ID", "Position", "PosError", "FWHM", "FWHMErr",
-                             "Volume", "VolErr", "TL", "TR", "SW", "SH"});
+    peak_parameters.add_row(
+        {"Peak ID", "Position", "PosError", "FWHM", "FWHMErr", "Volume", "VolErr", "TL", "TR", "SW", "SH"});
     // check if we indeed have Volumes or just normalizations by checking the binwidth
     // parameter of each peak
-    bool binning_set = std::find_if(fPeaks.begin(), fPeaks.end(), [](const auto &peak) {
-                           return peak.GetBinning() <= 0;
-                       }) == fPeaks.end();
+    bool binning_set = std::find_if(fPeaks.begin(), fPeaks.end(),
+                                    [](const auto &peak) { return peak.GetBinning() <= 0; }) == fPeaks.end();
     if (binning_set)
     {
-        peak_parameters.add_row({"Peak ID", "Position", "PosError", "FWHM", "FWHMErr",
-                                 "Volume", "VolErr", "TL", "TR", "SW", "SH"});
+        peak_parameters.add_row(
+            {"Peak ID", "Position", "PosError", "FWHM", "FWHMErr", "Volume", "VolErr", "TL", "TR", "SW", "SH"});
     }
     else
     {
-        peak_parameters.add_row({"Peak ID", "Position", "PosError", "FWHM", "FWHMErr",
-                                 "Normalization", "NormErr", "TL", "TR", "SW", "SH"});
+        peak_parameters.add_row(
+            {"Peak ID", "Position", "PosError", "FWHM", "FWHMErr", "Normalization", "NormErr", "TL", "TR", "SW", "SH"});
     }
 
     // bool has_tl = std::find(fPeaks.begin(), fPeaks.end(), [](auto& peak) {return
@@ -1121,26 +799,22 @@ void TheuerkaufFitter::PrintFitResults() const
 
     for (auto &peak : fPeaks)
     {
-        std::string _id       = std::to_string(peak.GetID());
-        std::string _pos      = std::to_string(peak.GetPos());
-        std::string _pos_e    = std::to_string(peak.GetPosErr());
-        std::string _fwhm     = std::to_string(peak.GetFWHM());
+        std::string _id = std::to_string(peak.GetID());
+        std::string _pos = std::to_string(peak.GetPos());
+        std::string _pos_e = std::to_string(peak.GetPosErr());
+        std::string _fwhm = std::to_string(peak.GetFWHM());
         std::string _fwhm_err = std::to_string(peak.GetFWHMErr());
-        std::string _vol      = std::to_string(peak.GetVol());
-        std::string _vol_err  = std::to_string(peak.GetVolErr());
-        std::string _tl       = peak.HasTL() ? std::to_string(peak.GetTL()) : "--";
-        std::string _tr       = peak.HasTR() ? std::to_string(peak.GetTR()) : "--";
-        std::string _sw       = peak.HasStep() ? std::to_string(peak.GetSW()) : "--";
-        std::string _sh       = peak.HasStep() ? std::to_string(peak.GetSH()) : "--";
+        std::string _vol = std::to_string(peak.GetVol());
+        std::string _vol_err = std::to_string(peak.GetVolErr());
+        std::string _tl = peak.HasTL() ? std::to_string(peak.GetTL()) : "--";
+        std::string _tr = peak.HasTR() ? std::to_string(peak.GetTR()) : "--";
+        std::string _sw = peak.HasStep() ? std::to_string(peak.GetSW()) : "--";
+        std::string _sh = peak.HasStep() ? std::to_string(peak.GetSH()) : "--";
 
-        peak_parameters.add_row(
-            {_id, _pos, _pos_e, _fwhm, _fwhm_err, _vol, _vol_err, _tl, _tr, _sw, _sh});
+        peak_parameters.add_row({_id, _pos, _pos_e, _fwhm, _fwhm_err, _vol, _vol_err, _tl, _tr, _sw, _sh});
     }
 
-    peak_parameters.column(0)
-        .format()
-        .font_style({tabulate::FontStyle::bold})
-        .font_align(tabulate::FontAlign::center);
+    peak_parameters.column(0).format().font_style({tabulate::FontStyle::bold}).font_align(tabulate::FontAlign::center);
 
     std::cout << std::endl << fit_results << std::endl;
     std::cout << peak_parameters << std::endl << std::endl;
@@ -1148,26 +822,30 @@ void TheuerkaufFitter::PrintFitResults() const
 
 TheuerkaufPeak *TheuerkaufFitter::GetPeak(const int id)
 {
-    auto it = std::find_if(fPeaks.begin(), fPeaks.end(),
-                           [&](const TheuerkaufPeak &pk) { return pk.GetID() == id; });
+    auto it = std::find_if(fPeaks.begin(), fPeaks.end(), [&](const TheuerkaufPeak &pk) { return pk.GetID() == id; });
     assert(it != fPeaks.end());
 
     return &(*it);
 }
 
-const int TheuerkaufFitter::GetNPeaks() { return fPeaks.size(); }
+const int TheuerkaufFitter::GetNPeaks()
+{
+    return fPeaks.size();
+}
 
 inline TheuerkaufFitter *TheuerkaufFitter::SetRange(double min, double max)
 {
     fXMin = min;
     fXMax = max;
 
-    for (auto &peak : fPeaks) { peak.SetRange(min, max); }
+    for (auto &peak : fPeaks)
+    {
+        peak.SetRange(min, max);
+    }
     return this;
 }
 
-inline TheuerkaufFitter *TheuerkaufFitter::SetBacgroundPoly(
-    unsigned int poly_order) noexcept
+inline TheuerkaufFitter *TheuerkaufFitter::SetBacgroundPoly(unsigned int poly_order) noexcept
 {
     fPolyBcgDegree = poly_order;
     return this;
@@ -1179,22 +857,17 @@ inline TheuerkaufFitter *TheuerkaufFitter::RemoveBackground() noexcept
     return this;
 }
 
-inline TheuerkaufFitter *TheuerkaufFitter::AllowNegativePeaks(
-    bool allow_negative_peaks) noexcept
+inline TheuerkaufFitter *TheuerkaufFitter::AllowNegativePeaks(bool allow_negative_peaks) noexcept
 {
     fOnlypositivepeaks = !allow_negative_peaks;
     return this;
 };
 
-const int TheuerkaufFitter::AddPeak(const double position,
-                                    const bool   leftTail,
-                                    const bool   rightTail,
-                                    const bool   step)
+const int TheuerkaufFitter::AddPeak(const double position, const bool leftTail, const bool rightTail, const bool step)
 {
     fPeaks.emplace_back(fXMin, fXMax, fPeaks.size(), leftTail, rightTail, step);
     fPeaks.back().SetParameter_Sigma(1., TheuerkaufPeak::ParamState::SAME);
-    fPeaks.back().SetParameter_Position(position, TheuerkaufPeak::ParamState::FREE, fXMin,
-                                        fXMax);
+    fPeaks.back().SetParameter_Position(position, TheuerkaufPeak::ParamState::FREE, fXMin, fXMax);
     if (leftTail)
         fPeaks.back().SetParameter_TailLeft(10., TheuerkaufPeak::ParamState::FREE);
     if (rightTail)
@@ -1224,16 +897,13 @@ double TheuerkaufFitter::Eval(const double *x, const double *p) const
     double sum = fBcgFunc ? fBcgFunc->Eval(*x) : 0.0;
 
     // Evaluate internal background
-    sum += std::accumulate(
-        std::reverse_iterator<const double *>(p + num_params),
-        std::reverse_iterator<const double *>(p + num_params - fPolyBcgDegree), 0.0,
-        [&x](double bg, double param) { return bg * *x + param; });
+    sum += std::accumulate(std::reverse_iterator<const double *>(p + num_params),
+                           std::reverse_iterator<const double *>(p + num_params - fPolyBcgDegree), 0.0,
+                           [&x](double bg, double param) { return bg * *x + param; });
 
     // Evaluate peaks
     return std::accumulate(fPeaks.begin(), fPeaks.end(), sum,
-                           [x, p](double _sum, const TheuerkaufPeak &peak) {
-                               return _sum + peak.Eval(x, p);
-                           });
+                           [x, p](double _sum, const TheuerkaufPeak &peak) { return _sum + peak.Eval(x, p); });
 }
 
 double TheuerkaufFitter::EvalTotalBacground(const double *x, const double *p)
@@ -1243,33 +913,30 @@ double TheuerkaufFitter::EvalTotalBacground(const double *x, const double *p)
     // eval bcg fcn
     double sum = fBcgFunc ? fBcgFunc->Eval(*x) : 0.0;
     // eval polynomial bcg
-    std::accumulate(
-        std::reverse_iterator<const double *>(p + num_params),
-        std::reverse_iterator<const double *>(p + num_params - fPolyBcgDegree), sum,
-        [&x](double bg, double param) { return bg * *x + param; });
+    std::accumulate(std::reverse_iterator<const double *>(p + num_params),
+                    std::reverse_iterator<const double *>(p + num_params - fPolyBcgDegree), sum,
+                    [&x](double bg, double param) { return bg * *x + param; });
 
     // eval peak steps
     std::accumulate(fPeaks.begin(), fPeaks.end(), sum,
-                    [x, p](double _sum, const TheuerkaufPeak &peak) {
-                        return _sum + peak.EvalStep(x, p);
-                    });
+                    [x, p](double _sum, const TheuerkaufPeak &peak) { return _sum + peak.EvalStep(x, p); });
 
     return sum;
 }
 
-void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
+void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint)
 {
     TH1 *histo = (TH1 *)histAna->Clone();
-    if (!fSumFunc) return;
+    if (!fSumFunc)
+        return;
     fTempObjects.clear();
     fTempPeaks.clear();
 
     int num_params = GetNumParams();
 
     auto tot_bcg =
-        std::make_unique<TF1>(GetFuncUniqueName("total_bcg", this).c_str(), this,
-                              &TheuerkaufFitter::EvalTotalBacground, fXMin, fXMax,
-                              num_params, "TheuerkaufFitter", "EvalTotalBacground");
+        std::make_unique<TF1>(GetFuncUniqueName("total_bcg", this).c_str(), this, &TheuerkaufFitter::EvalTotalBacground,
+                              fXMin, fXMax, num_params, "TheuerkaufFitter", "EvalTotalBacground");
     fSumFunc->SetLineColor(kRed);
     fSumFunc->SetLineWidth(2);
     tot_bcg->SetLineColor(kGray);
@@ -1277,9 +944,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
 
     fTempPeaks = fPeaks;
     std::sort(fTempPeaks.begin(), fTempPeaks.end(),
-              [](const TheuerkaufPeak &a, const TheuerkaufPeak &b) {
-                  return a.GetPos() < b.GetPos();
-              });
+              [](const TheuerkaufPeak &a, const TheuerkaufPeak &b) { return a.GetPos() < b.GetPos(); });
     int j = 0;
     for (auto &temp_peak : fTempPeaks)
     {
@@ -1313,8 +978,14 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
 
     TPad *can;
 
-    if (toPrint == nullptr) { can = new TCanvas("canvas", "TheuerkaufFitter", 800, 800); }
-    else { can = toPrint; }
+    if (toPrint == nullptr)
+    {
+        can = new TCanvas("canvas", "TheuerkaufFitter", 800, 800);
+    }
+    else
+    {
+        can = toPrint;
+    }
 
     can->Divide(1, 2, 0, 0);
     can->cd(1);
@@ -1329,16 +1000,22 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
     for (auto p : fTempPeaks)
     {
         auto fP = p.GetFunction();
-        if (yMin > fSumFunc->Eval(p.GetPos())) yMin = fSumFunc->Eval(p.GetPos()) * 1.1;
-        if (yMax < fSumFunc->Eval(p.GetPos())) yMax = fSumFunc->Eval(p.GetPos()) * 1.1;
+        if (yMin > fSumFunc->Eval(p.GetPos()))
+            yMin = fSumFunc->Eval(p.GetPos()) * 1.1;
+        if (yMax < fSumFunc->Eval(p.GetPos()))
+            yMax = fSumFunc->Eval(p.GetPos()) * 1.1;
     }
 
     fSumFunc->GetRange(xMinRange, xMaxRange);
 
-    if (yMin > tot_bcg->Eval(xMinRange)) yMin = tot_bcg->Eval(xMinRange) * 1.1;
-    if (yMin > tot_bcg->Eval(xMaxRange)) yMin = tot_bcg->Eval(xMaxRange) * 1.1;
-    if (yMax < tot_bcg->Eval(xMinRange)) yMax = tot_bcg->Eval(xMinRange) * 1.1;
-    if (yMax < tot_bcg->Eval(xMaxRange)) yMax = tot_bcg->Eval(xMaxRange) * 1.1;
+    if (yMin > tot_bcg->Eval(xMinRange))
+        yMin = tot_bcg->Eval(xMinRange) * 1.1;
+    if (yMin > tot_bcg->Eval(xMaxRange))
+        yMin = tot_bcg->Eval(xMaxRange) * 1.1;
+    if (yMax < tot_bcg->Eval(xMinRange))
+        yMax = tot_bcg->Eval(xMinRange) * 1.1;
+    if (yMax < tot_bcg->Eval(xMaxRange))
+        yMax = tot_bcg->Eval(xMaxRange) * 1.1;
 
     // histo->GetXaxis()->SetRangeUser(fTempPeaks.front().GetPos() - 6 *
     // fTempPeaks.front().GetSig() - 10,
@@ -1360,8 +1037,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
     fSumFunc->Draw("SAME");
     tot_bcg->Draw("SAME");
 
-    std::for_each(fTempPeaks.begin(), fTempPeaks.end(),
-                  [](auto &peak) { peak.GetFunction()->Draw("SAME"); });
+    std::for_each(fTempPeaks.begin(), fTempPeaks.end(), [](auto &peak) { peak.GetFunction()->Draw("SAME"); });
 
     fit_confidence_histo->Reset();
     fFitter->GetConfidenceIntervals(fit_confidence_histo.get(), 0.95);
@@ -1369,13 +1045,11 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
     substracted_histo->GetXaxis()->SetLabelSize(0.05);
     for (int i = 0; i < histo->GetNbinsX() + 2; i++)
     {
-        double low_edge     = substracted_histo->GetXaxis()->GetBinLowEdge(i);
-        double high_edge    = substracted_histo->GetXaxis()->GetBinUpEdge(i);
-        double fcn_integral = fSumFunc->Integral(low_edge, high_edge) /
-                              (double)histo->GetXaxis()->GetBinWidth(i);
+        double low_edge = substracted_histo->GetXaxis()->GetBinLowEdge(i);
+        double high_edge = substracted_histo->GetXaxis()->GetBinUpEdge(i);
+        double fcn_integral = fSumFunc->Integral(low_edge, high_edge) / (double)histo->GetXaxis()->GetBinWidth(i);
         substracted_histo->SetBinContent(i, histo->GetBinContent(i) - fcn_integral);
-        fit_confidence_histo->SetBinContent(i, fit_confidence_histo->GetBinContent(i) -
-                                                   fcn_integral);
+        fit_confidence_histo->SetBinContent(i, fit_confidence_histo->GetBinContent(i) - fcn_integral);
     }
 
     fit_confidence_histo->SetFillColor(kRed);
@@ -1391,12 +1065,12 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
     sigma_histo_plus->SetLineColor(kBlack);
     sigma_histo_minus->SetLineColor(kBlack);
 
-    double maxY  = substracted_histo->GetMaximum() > sigma_histo_plus->GetMaximum()
-                       ? substracted_histo->GetMaximum() * 1.1
-                       : sigma_histo_plus->GetMaximum() * 1.1;
-    double minY  = substracted_histo->GetMinimum() < sigma_histo_minus->GetMinimum()
-                       ? substracted_histo->GetMinimum() * 1.1
-                       : sigma_histo_minus->GetMinimum() * 1.1;
+    double maxY = substracted_histo->GetMaximum() > sigma_histo_plus->GetMaximum()
+                      ? substracted_histo->GetMaximum() * 1.1
+                      : sigma_histo_plus->GetMaximum() * 1.1;
+    double minY = substracted_histo->GetMinimum() < sigma_histo_minus->GetMinimum()
+                      ? substracted_histo->GetMinimum() * 1.1
+                      : sigma_histo_minus->GetMinimum() * 1.1;
     double range = abs(maxY) > abs(minY) ? abs(maxY) : abs(minY);
 
     can->cd(2);
@@ -1431,7 +1105,8 @@ void TheuerkaufFitter::Analyze(TH1 *histAna, TPad *toPrint = nullptr)
 
 void TheuerkaufFitter::HandleParameterStates()
 {
-    if (!fSumFunc) return;
+    if (!fSumFunc)
+        return;
     // The fSumFunct has complete set of parameters for every TheuerkaufPeak + polynomial
     // background. Each TheuerkaufPeak knows which parameters it should take (based on the
     // peakID) However, some of them are not used by the TheuerkaufPeak function, e.g.
@@ -1460,7 +1135,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_Volume();
+        auto state = peak.GetState_Volume();
         auto param_index = peak.GetIndex_Volume();
         // NONE is invalid state for volume
         if (state == PAR_STATE::FIXED)
@@ -1485,7 +1160,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_Position();
+        auto state = peak.GetState_Position();
         auto param_index = peak.GetIndex_Position();
         // NONE and SAME are invalid states for position
         if (state == PAR_STATE::FIXED) // NONE is invalid state for position
@@ -1497,7 +1172,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_Sigma();
+        auto state = peak.GetState_Sigma();
         auto param_index = peak.GetIndex_Sigma();
         if (state == PAR_STATE::NONE || state == PAR_STATE::FIXED)
         {
@@ -1521,7 +1196,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_TailLeft();
+        auto state = peak.GetState_TailLeft();
         auto param_index = peak.GetIndex_TailLeft();
         if (state == PAR_STATE::NONE || state == PAR_STATE::FIXED)
         {
@@ -1545,7 +1220,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_TailRight();
+        auto state = peak.GetState_TailRight();
         auto param_index = peak.GetIndex_TailRight();
         if (state == PAR_STATE::NONE || state == PAR_STATE::FIXED)
         {
@@ -1569,7 +1244,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_StepHeight();
+        auto state = peak.GetState_StepHeight();
         auto param_index = peak.GetIndex_StepHeight();
         if (state == PAR_STATE::NONE || state == PAR_STATE::FIXED)
         {
@@ -1593,7 +1268,7 @@ void TheuerkaufFitter::HandleParameterStates()
     first_same_index = -1;
     for (auto &peak : fPeaks)
     {
-        auto state       = peak.GetState_StepWidth();
+        auto state = peak.GetState_StepWidth();
         auto param_index = peak.GetIndex_StepWidth();
         if (state == PAR_STATE::NONE || state == PAR_STATE::FIXED)
         {
@@ -1617,16 +1292,17 @@ void TheuerkaufFitter::HandleParameterStates()
 
 void TheuerkaufFitter::DistributeParametersToPeaks()
 {
-    if (!fSumFunc) return;
+    if (!fSumFunc)
+        return;
     for (auto &peak : fPeaks)
     {
         int i_vol = peak.GetIndex_Volume();
         int i_pos = peak.GetIndex_Position();
         int i_sig = peak.GetIndex_Sigma();
-        int i_tl  = peak.GetIndex_TailLeft();
-        int i_tr  = peak.GetIndex_TailRight();
-        int i_sh  = peak.GetIndex_StepWidth();
-        int i_sw  = peak.GetIndex_StepHeight();
+        int i_tl = peak.GetIndex_TailLeft();
+        int i_tr = peak.GetIndex_TailRight();
+        int i_sh = peak.GetIndex_StepWidth();
+        int i_sw = peak.GetIndex_StepHeight();
 
         peak.GetFunction()->SetParameter(0, fSumFunc->GetParameter(i_vol));
         peak.GetFunction()->SetParameter(1, fSumFunc->GetParameter(i_pos));
@@ -1650,10 +1326,8 @@ void TheuerkaufFitter::DistributeParametersToPeaks()
     {
         for (int i = 0; i < fPolyBcgDegree; ++i)
         {
-            fBcgFunc->SetParameter(
-                i, fSumFunc->GetParameter(fSumFunc->GetNpar() - fPolyBcgDegree - 1 + i));
-            fBcgFunc->SetParError(
-                i, fSumFunc->GetParError(fSumFunc->GetNpar() - fPolyBcgDegree - 1 + i));
+            fBcgFunc->SetParameter(i, fSumFunc->GetParameter(fSumFunc->GetNpar() - fPolyBcgDegree - 1 + i));
+            fBcgFunc->SetParError(i, fSumFunc->GetParError(fSumFunc->GetNpar() - fPolyBcgDegree - 1 + i));
         }
     }
 }
@@ -1671,14 +1345,13 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
 
     // set binning, becasue peak volume depends on the histogram binning
     double hist_binning = fTempHist->GetXaxis()->GetBinWidth(1);
-    if (fVerbose > 2) std::cout << "binning " << hist_binning << std::endl;
-    std::for_each(fPeaks.begin(), fPeaks.end(),
-                  [&hist_binning](auto &peak) { peak.SetBinning(hist_binning); });
+    if (fVerbose > 2)
+        std::cout << "binning " << hist_binning << std::endl;
+    std::for_each(fPeaks.begin(), fPeaks.end(), [&hist_binning](auto &peak) { peak.SetBinning(hist_binning); });
 
     // Create fit function
-    fSumFunc  = std::make_unique<TF1>(GetFuncUniqueName("fSumFunc", this).c_str(), this,
-                                     &TheuerkaufFitter::Eval, fXMin, fXMax, num_params,
-                                     "TheuerkaufFitter", "Eval");
+    fSumFunc = std::make_unique<TF1>(GetFuncUniqueName("fSumFunc", this).c_str(), this, &TheuerkaufFitter::Eval, fXMin,
+                                     fXMax, num_params, "TheuerkaufFitter", "Eval");
     int nbins = fTempHist->FindBin(fXMax) - fTempHist->FindBin(fXMin);
     fSumFunc->SetNpx(nbins * 10);
     // set bcg params names
@@ -1696,10 +1369,8 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     int b1 = fTempHist->FindBin(fXMin);
     int b2 = fTempHist->FindBin(fXMax);
     // Check if any of the peaks contain steps
-    bool steps =
-        std::find_if(fPeaks.begin(), fPeaks.end(), [](const TheuerkaufPeak &peak) {
-            return peak.HasStep();
-        }) != fPeaks.end();
+    bool steps = std::find_if(fPeaks.begin(), fPeaks.end(),
+                              [](const TheuerkaufPeak &peak) { return peak.HasStep(); }) != fPeaks.end();
     // If there is internal background, we need to estimate it first. We will
     // estimate that the background is constant at the level of the bin with the
     // lowest content if there are no steps, or constant at the level of the
@@ -1728,9 +1399,11 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
             {
                 for (int b = b1; b <= b2; ++b)
                 {
-                    double bc = fTempHist->GetBinContent(b) -
-                                fBcgFunc->Eval(fTempHist->GetBinCenter(b));
-                    if (bc < intBg0) { intBg0 = bc; }
+                    double bc = fTempHist->GetBinContent(b) - fBcgFunc->Eval(fTempHist->GetBinCenter(b));
+                    if (bc < intBg0)
+                    {
+                        intBg0 = bc;
+                    }
                 }
             }
             else
@@ -1738,7 +1411,10 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
                 for (int b = b1; b <= b2; ++b)
                 {
                     double bc = fTempHist->GetBinContent(b);
-                    if (bc < intBg0) { intBg0 = bc; }
+                    if (bc < intBg0)
+                    {
+                        intBg0 = bc;
+                    }
                 }
             }
         }
@@ -1766,7 +1442,7 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     {
         struct Result
         {
-            int    nStepFree;
+            int nStepFree;
             double sumFixedStep;
         };
 
@@ -1774,12 +1450,14 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
                                       [](Result _result, const TheuerkaufPeak &peak) {
                                           if (peak.HasStep())
                                           {
-                                              if (peak.GetState_StepHeight() ==
-                                                  TheuerkaufPeak::ParamState::FIXED)
+                                              if (peak.GetState_StepHeight() == TheuerkaufPeak::ParamState::FIXED)
                                               {
                                                   _result.sumFixedStep += peak.GetSH();
                                               }
-                                              else { ++_result.nStepFree; }
+                                              else
+                                              {
+                                                  ++_result.nStepFree;
+                                              }
                                           }
                                           return _result;
                                       });
@@ -1803,48 +1481,47 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     double sumAmp = 0.0;
 
     // First: no steps
-    std::transform(fPeaks.begin(), fPeaks.end(), std::back_inserter(amps),
-                   [&](const TheuerkaufPeak &peak) {
-                       double pos = peak.GetPos();
-                       double amp =
-                           fTempHist->GetBinContent(fTempHist->FindBin(pos)) - intBg0;
-                       if (fBcgFunc) { amp -= fBcgFunc->Eval(pos); }
-                       sumAmp += amp;
-                       return amp;
-                   });
+    std::transform(fPeaks.begin(), fPeaks.end(), std::back_inserter(amps), [&](const TheuerkaufPeak &peak) {
+        double pos = peak.GetPos();
+        double amp = fTempHist->GetBinContent(fTempHist->FindBin(pos)) - intBg0;
+        if (fBcgFunc)
+        {
+            amp -= fBcgFunc->Eval(pos);
+        }
+        sumAmp += amp;
+        return amp;
+    });
 
     // Second: include steps
     using PeakVector_t = std::vector<TheuerkaufPeak>;
-    using PeakID_t     = PeakVector_t::size_type;
+    using PeakID_t = PeakVector_t::size_type;
 
     if (steps)
     {
         // Generate a list of peak IDs sorted by position
         std::vector<PeakID_t> sortedPeakIDs(fPeaks.size());
         std::iota(sortedPeakIDs.begin(), sortedPeakIDs.end(), 0);
-        std::sort(sortedPeakIDs.begin(), sortedPeakIDs.end(),
-                  [&](const PeakID_t &lhs, const PeakID_t &rhs) {
-                      return fPeaks[lhs].GetPos() < fPeaks[rhs].GetPos();
-                  });
+        std::sort(sortedPeakIDs.begin(), sortedPeakIDs.end(), [&](const PeakID_t &lhs, const PeakID_t &rhs) {
+            return fPeaks[lhs].GetPos() < fPeaks[rhs].GetPos();
+        });
 
         struct Sums
         {
             double step, amp;
         };
         auto sums =
-            std::accumulate(sortedPeakIDs.begin(), sortedPeakIDs.end(), Sums{0.0, 0.0},
-                            [&](Sums _sums, PeakID_t id) {
-                                const auto &peak    = fPeaks[id];
-                                double      curStep = 0.0;
-                                if (peak.HasStep())
-                                {
-                                    curStep = peak.HasStep() ? peak.GetSH() : avgFreeStep;
-                                }
-                                amps[id] -= _sums.step + curStep / 2.0;
-                                _sums.amp -= _sums.step + curStep / 2.0;
-                                _sums.step += curStep;
-                                return _sums;
-                            });
+            std::accumulate(sortedPeakIDs.begin(), sortedPeakIDs.end(), Sums{0.0, 0.0}, [&](Sums _sums, PeakID_t id) {
+                const auto &peak = fPeaks[id];
+                double curStep = 0.0;
+                if (peak.HasStep())
+                {
+                    curStep = peak.HasStep() ? peak.GetSH() : avgFreeStep;
+                }
+                amps[id] -= _sums.step + curStep / 2.0;
+                _sums.amp -= _sums.step + curStep / 2.0;
+                _sums.step += curStep;
+                return _sums;
+            });
         sumAmp -= sums.amp;
     }
 
@@ -1861,7 +1538,10 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
 
     // First: calculate total volume
     double sumVol = 0.0;
-    for (int b = b1; b <= b2; ++b) { sumVol += fTempHist->GetBinContent(b); }
+    for (int b = b1; b <= b2; ++b)
+    {
+        sumVol += fTempHist->GetBinContent(b);
+    }
     sumVol -= intBg0 * (b2 - b1 + 1.);
     if (fBcgFunc != nullptr)
     {
@@ -1873,17 +1553,15 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
 
     if (steps)
     {
-        sumVol -= std::accumulate(fPeaks.begin(), fPeaks.end(), 0.0,
-                                  [&](double sum, const TheuerkaufPeak &peak) {
-                                      if (peak.HasStep())
-                                      {
-                                          double curStep =
-                                              peak.HasStep() ? avgFreeStep : peak.GetSH();
-                                          int b = fTempHist->FindBin(peak.GetPos());
-                                          sum -= curStep * (b2 - std::min(b, b2) + 0.5);
-                                      }
-                                      return sum;
-                                  });
+        sumVol -= std::accumulate(fPeaks.begin(), fPeaks.end(), 0.0, [&](double sum, const TheuerkaufPeak &peak) {
+            if (peak.HasStep())
+            {
+                double curStep = peak.HasStep() ? avgFreeStep : peak.GetSH();
+                int b = fTempHist->FindBin(peak.GetPos());
+                sum -= curStep * (b2 - std::min(b, b2) + 0.5);
+            }
+            return sum;
+        });
     }
 
     // normalize on binning
@@ -1893,12 +1571,13 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     double avgSigma = std::abs(sumVol / (sumAmp * std::sqrt(2. * M_PI)));
     if (fVerbose > 2)
         std::cout << "sumvVol " << sumVol << " sumAmp " << sumAmp << " " << std::endl;
-    if (fVerbose > 2) std::cout << "avgSigma " << avgSigma << std::endl;
+    if (fVerbose > 2)
+        std::cout << "avgSigma " << avgSigma << std::endl;
 
     // Third: calculate sum of free volumes and amplitudes
     double sumFreeAmp = sumAmp;
     double sumFreeVol = sumVol;
-    auto   ampIter    = amps.begin();
+    auto ampIter = amps.begin();
     for (const auto &peak : fPeaks)
     {
         if (peak.GetState_Volume() != TheuerkaufPeak::ParamState::FREE)
@@ -1925,29 +1604,29 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
             {
             case TheuerkaufPeak::ParamState::SAME:
                 if (fVerbose > 1)
-                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID()
-                              << " is set to \"SAME\"" << std::endl;
+                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID() << " is set to \"SAME\""
+                              << std::endl;
                 par_name += "_SAME ";
                 fSumFunc->FixParameter(par_n, peak.GetFunction()->GetParameter(i));
                 break;
             case TheuerkaufPeak::ParamState::FIXED:
                 if (fVerbose > 1)
-                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID()
-                              << " is set to \"FIXED\"" << std::endl;
+                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID() << " is set to \"FIXED\""
+                              << std::endl;
                 par_name += "_FIXED";
                 fSumFunc->FixParameter(par_n, peak.GetFunction()->GetParameter(i));
                 break;
             case TheuerkaufPeak::ParamState::NONE:
                 if (fVerbose > 1)
-                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID()
-                              << " is set to \"NONE\"" << std::endl;
+                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID() << " is set to \"NONE\""
+                              << std::endl;
                 par_name += "_NONE ";
                 fSumFunc->FixParameter(par_n, peak.GetFunction()->GetParameter(i));
                 break;
             default:
                 if (fVerbose > 1)
-                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID()
-                              << " is set to \"FREE\"" << std::endl;
+                    std::cout << "Parameter " << par_name << " of peak " << peak.GetID() << " is set to \"FREE\""
+                              << std::endl;
                 fSumFunc->SetParameter(par_n, peak.GetFunction()->GetParameter(i));
                 break;
             }
@@ -1963,15 +1642,14 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
         int i_vol = peak.GetIndex_Volume();
         int i_pos = peak.GetIndex_Position();
         int i_sig = peak.GetIndex_Sigma();
-        int i_tl  = peak.GetIndex_TailLeft();
-        int i_tr  = peak.GetIndex_TailRight();
-        int i_sh  = peak.GetIndex_StepWidth();
-        int i_sw  = peak.GetIndex_StepHeight();
+        int i_tl = peak.GetIndex_TailLeft();
+        int i_tr = peak.GetIndex_TailRight();
+        int i_sh = peak.GetIndex_StepWidth();
+        int i_sw = peak.GetIndex_StepHeight();
 
         if (fVerbose > 1)
-            std::cout << "peak " << peak.GetID() << " i_vol " << i_vol << " i_pos "
-                      << i_pos << " i_sig " << i_sig << " i_tl " << i_tl << " i_tr "
-                      << i_tr << " i_sw " << i_sw << " i_sh " << i_sh << std::endl;
+            std::cout << "peak " << peak.GetID() << " i_vol " << i_vol << " i_pos " << i_pos << " i_sig " << i_sig
+                      << " i_tl " << i_tl << " i_tr " << i_tr << " i_sw " << i_sw << " i_sh " << i_sh << std::endl;
 
         double amp = *(ampIter++);
 
@@ -2016,15 +1694,15 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     }
 
     if (fVerbose > 1)
-        std::cout << "Sum function has " << fSumFunc->GetNpar() << " from which "
-                  << fSumFunc->GetNumberFreeParameters() << " are set free" << std::endl;
+        std::cout << "Sum function has " << fSumFunc->GetNpar() << " from which " << fSumFunc->GetNumberFreeParameters()
+                  << " are set free" << std::endl;
 
     // Now, do the fit
     std::string fit_options = "0NRMIS";
     std::transform(options.begin(), options.end(), options.begin(), ::toupper);
-    if (options.find("OUTPUT_ROOT") == std::string::npos) fit_options += "Q";
-    if ((options.find("LIKELIHOOD") != std::string::npos) ||
-        options.find("POISSON") != std::string::npos)
+    if (options.find("OUTPUT_ROOT") == std::string::npos)
+        fit_options += "Q";
+    if ((options.find("LIKELIHOOD") != std::string::npos) || options.find("POISSON") != std::string::npos)
         fit_options += "L";
 
     fFitResults = fTempHist->Fit(fSumFunc.get(), fit_options.c_str());
