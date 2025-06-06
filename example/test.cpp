@@ -10,7 +10,7 @@
 #include "TH1F.h"
 #include "TMath.h"
 
-#include "TheuerkaufPeak.hpp"
+#include "TheuerkaufPeak.h"
 
 Double_t gauss(Double_t *x, Double_t *par)
 {
