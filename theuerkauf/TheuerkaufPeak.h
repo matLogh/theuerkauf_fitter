@@ -317,12 +317,12 @@ class TheuerkaufFitter
     /// @param peak
     /// @return id of added peak
     const int AddPeak(const TheuerkaufPeak &peak);
-    TheuerkaufFitter *SetBacground(std::unique_ptr<TF1> &bcg_fcn) noexcept;
+    TheuerkaufFitter *SetBackground(std::unique_ptr<TF1> &bcg_fcn) noexcept;
 
     /// @brief get peak based on its ID
     /// @param id
     /// @return
-    TheuerkaufPeak *GetPeak(const int id);
+    std::shared_ptr<TheuerkaufPeak> GetPeak(const int id);
 
     /// @brief Get number of peaks
     /// @return
@@ -332,7 +332,7 @@ class TheuerkaufFitter
     /// @param poly_order number of parameters (poly_order=0 no background, poly_order=3
     /// quadratic etc)
     /// @return
-    TheuerkaufFitter *SetBacgroundPoly(unsigned int poly_order) noexcept;
+    TheuerkaufFitter *SetBackgroundPoly(unsigned int poly_order) noexcept;
 
     /// @brief remove function set by the TheuerkaufFitter::SetBackground, internal
     /// polynomial background remains
@@ -349,6 +349,18 @@ class TheuerkaufFitter
     /// @param max X max
     /// @return
     TheuerkaufFitter *SetRange(double min, double max);
+
+    /// @brief Get X range of the fitter
+    void GetRange(double &min, double &max) const noexcept;
+    double GetXmin() const noexcept
+    {
+        return fXMin;
+    };
+
+    double GetXmax() const noexcept
+    {
+        return fXMax;
+    };
 
     double Eval(const double *x, const double *p) const;
 
@@ -368,7 +380,14 @@ class TheuerkaufFitter
     /// bands
     /// @param histAna
     /// @param toPrint
-    void Analyze(TH1 *histAna, TPad *toPrint = nullptr);
+    void Analyze(TH1 *histAna);
+
+    /// @brief Draws the fit function and the background function.
+    /// @param hist histogram to be drawn - if set tu nullptr it is assumed that histogram is already plotted. If
+    /// provided, function creates copy of the histogram and draws it.
+    /// @param toPrint pad to draw the fit function on - if set to nullptr, a new canvas will be drawn
+    void DrawFit(TH1 *hist = nullptr, TVirtualPad *toPrint = nullptr);
+
     TFitResultPtr GetFitResults()
     {
         return fFitResults;
@@ -391,7 +410,7 @@ class TheuerkaufFitter
     };
 
   private:
-    double EvalTotalBacground(const double *x, const double *p);
+    double EvalTotalBackground(const double *x, const double *p);
     const int GetNumParams() const noexcept
     {
         return static_cast<int>(fPeaks.size() * 7 + fPolyBcgDegree);
@@ -413,7 +432,26 @@ class TheuerkaufFitter
     std::unique_ptr<TF1> fBcgFunc;
     std::shared_ptr<TH1> fTempHist;
 
-    std::vector<TheuerkaufPeak> fPeaks;
-    std::vector<std::unique_ptr<TObject>> fTempObjects;
-    std::vector<TheuerkaufPeak> fTempPeaks;
+    std::vector<std::shared_ptr<TheuerkaufPeak>> fPeaks;
+
+    std::vector<std::shared_ptr<TheuerkaufPeak>> fTempPeaks;
+
+    // handle graphical objects
+  private:
+    std::vector<std::shared_ptr<TObject>> fTempObjects;
+
+  public:
+    /// @brief Get graphical objects that were created during the fit - this is to ensure they will continue existing
+    /// after fitter object is deleted
+    std::vector<std::shared_ptr<TObject>> &GetGraphicalObjects()
+    {
+        return fTempObjects;
+    }
+
+  public:
+    void GetConfidenceIntervals(unsigned int n, const double *x, double *ci, double cl = 0.95, bool norm = true);
+    void GetConfidenceIntervals(TH1 *hfit, double cl = 0.95);
+
+    static double GetMinimumInRange(const std::shared_ptr<TH1> h, double x_min, double x_max) noexcept;
+    static double GetMaximumInRange(const std::shared_ptr<TH1> h, double x_min, double x_max) noexcept;
 };
