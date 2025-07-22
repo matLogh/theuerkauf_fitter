@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     h1->FillRandom(tfcn->GetName(), 10000);
 
     TheuerkaufFitter fitter(0, 200);
-    fitter.SetBacgroundPoly(3);
+    fitter.SetBackgroundPoly(3);
     fitter.AddPeak(70, false, false, false);
     fitter.AddPeak(30, false, false, false);
     fitter.AddPeak(50, false, false, false);
