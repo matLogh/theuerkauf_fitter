@@ -372,7 +372,7 @@ class TheuerkaufFitter
     ///        "OUTPUT_ROOT" - print ROOT fit output,
     ///        "OUTPUT_PLAIN" - plain output without table (id, pos, pos_err, fwhm,
     ///        fwhm_err, vol, vol_err) "LIKELIHOOD" - use likelihood in fitting, "POISSON"
-    ///        - use likelihood in fitting
+    ///        - use chi2 in fitting
     void Fit(TH1 *histFit, std::string options = "");
 
     /// @brief Draw canvas with 2 pads: first with fitted spectrum, summed fit function
