@@ -84,4 +84,24 @@ inline Color_t GetColor(int get_color_index = -1, std::string hex_color = "")
     return c;
 }
 
+/// @brief Clear all functions attached to a histogram
+/// @param h
+inline void ClearListOfFunctions(TH1 *h)
+{
+    if (h == nullptr)
+        return;
+    TList *list = h->GetListOfFunctions();
+    if (list != nullptr)
+    {
+
+        TIter iter(list);
+        TObject *obj = nullptr;
+        while ((obj = iter()))
+        {
+            list->Remove(obj);
+            delete obj;
+        }
+    }
+}
+
 #endif // __Util_h__
