@@ -752,7 +752,17 @@ void TheuerkaufFitter::PrintFitResults() const
 
     std::string _hname = fTempHist != nullptr ? fTempHist->GetName() : "unknown hist";
 
-    fit_results.add_row({_hname, _status, _chi2, _rchi2, _errmat});
+    if (fFitResults->IsValid())
+    {
+        fit_results.add_row({_hname, _status, _chi2, _rchi2, _errmat});
+    }
+    else
+    {
+        std::string _edm = "edm " + std::to_string(fFitResults->Edm());
+        std::string _ncalls = "ncalls " + std::to_string(fFitResults->NCalls());
+        fit_results.add_row({_hname, _status, _chi2, _rchi2, _edm, _ncalls, _errmat});
+    }
+
     // fit_results.format()
     //            .border_top("*")
     //            .border_bottom("-")
@@ -1094,6 +1104,8 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         auto hname = GetFuncUniqueName(Form("_hist_d%d", this->GetPeak(0)->GetPos()), this);
         _h = std::shared_ptr<TH1>(dynamic_cast<TH1 *>(histAna->Clone(hname.c_str())));
         _h->SetDirectory(0);
+        // subtracted histo is not resetted here, so we need to clean the list of functions attached to it
+        ClearListOfFunctions(_h.get());
         _h->Draw();
     }
 
@@ -1180,6 +1192,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     _h->SetTitle(";Energy [keV];Counts");
 
     can->cd(1);
+    gPad->SetLogy(true);
     _h->Draw("HIST");
     sum_fcn_hist->Draw("SAME");
     tot_bcg_hist->Draw("SAME");
@@ -1924,6 +1937,12 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
         fit_options += "Q";
     if ((options.find("LIKELIHOOD") != std::string::npos) || options.find("POISSON") != std::string::npos)
         fit_options += "L";
+
+    // fitter settings
+    // TVirtualFitter::SetMaxIterations(1000000);
+    // TVirtualFitter::SetMaxFunctionCalls(10000000);
+    // TVirtualFitter::SetPrecision(1e-4);
+    // TVirtualFitter::SetDefaultFitter("Minuit2");
 
     fFitResults = fTempHist->Fit(fSumFunc.get(), fit_options.c_str());
 
