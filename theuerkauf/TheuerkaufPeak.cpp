@@ -990,6 +990,7 @@ void TheuerkaufFitter::DrawFit(TH1 *hist, TVirtualPad *toPrint)
     tot_bcg_hist->SetLineColor(color);
     tot_bcg_hist->SetLineWidth(0);
     tot_bcg_hist->SetFillStyle(3002);
+    tot_bcg_hist->SetFillColor(color);
 
     std::shared_ptr<TH1> sum_hist(dynamic_cast<TH1 *>(fSumFunc->GetHistogram()->Clone()));
     sum_hist->SetName(GetFuncUniqueName("sum_hist", sum_hist.get()).c_str());
@@ -1945,6 +1946,11 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     // TVirtualFitter::SetDefaultFitter("Minuit2");
 
     fFitResults = fTempHist->Fit(fSumFunc.get(), fit_options.c_str());
+    // if fit is not valid or the covariance matrix is weird, lets give it another go
+    if (!fFitResults->IsValid() || fFitResults->CovMatrixStatus() != 3)
+    {
+        fFitResults = fTempHist->Fit(fSumFunc.get(), fit_options.c_str());
+    }
 
     this->DistributeParametersToPeaks();
     // Store Chi^2
