@@ -187,66 +187,66 @@ TheuerkaufPeak::~TheuerkaufPeak()
     }
 }
 
-inline const int TheuerkaufPeak::GetIndex_Volume() const noexcept
+const int TheuerkaufPeak::GetIndex_Volume() const noexcept
 {
     return fParamIndex[0];
 };
-inline const int TheuerkaufPeak::GetIndex_Position() const noexcept
+const int TheuerkaufPeak::GetIndex_Position() const noexcept
 {
     return fParamIndex[1];
 };
-inline const int TheuerkaufPeak::GetIndex_Sigma() const noexcept
+const int TheuerkaufPeak::GetIndex_Sigma() const noexcept
 {
     return fParamIndex[2];
 };
-inline const int TheuerkaufPeak::GetIndex_TailLeft() const noexcept
+const int TheuerkaufPeak::GetIndex_TailLeft() const noexcept
 {
     return fParamIndex[3];
 };
-inline const int TheuerkaufPeak::GetIndex_TailRight() const noexcept
+const int TheuerkaufPeak::GetIndex_TailRight() const noexcept
 {
     return fParamIndex[4];
 };
-inline const int TheuerkaufPeak::GetIndex_StepHeight() const noexcept
+const int TheuerkaufPeak::GetIndex_StepHeight() const noexcept
 {
     return fParamIndex[5];
 };
-inline const int TheuerkaufPeak::GetIndex_StepWidth() const noexcept
+const int TheuerkaufPeak::GetIndex_StepWidth() const noexcept
 {
     return fParamIndex[6];
 };
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_Volume(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_Volume(const int index)
 {
     fParamIndex[0] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_Position(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_Position(const int index)
 {
     fParamIndex[1] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_Sigma(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_Sigma(const int index)
 {
     fParamIndex[2] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_TailLeft(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_TailLeft(const int index)
 {
     fParamIndex[3] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_TailRight(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_TailRight(const int index)
 {
     fParamIndex[4] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_StepHeight(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_StepHeight(const int index)
 {
     fParamIndex[5] = index;
     return this;
 };
-inline TheuerkaufPeak *TheuerkaufPeak::SetIndex_StepWidth(const int index)
+TheuerkaufPeak *TheuerkaufPeak::SetIndex_StepWidth(const int index)
 {
     fParamIndex[6] = index;
     return this;
@@ -271,13 +271,13 @@ TheuerkaufPeak *TheuerkaufPeak::SetRange(double min, double max)
     return this;
 }
 
-inline const TheuerkaufPeak::ParamState TheuerkaufPeak::GetState(int index) const
+const TheuerkaufPeak::ParamState TheuerkaufPeak::GetState(int index) const
 {
     assert(index >= 0 && index < 7);
     return fParamState[index];
 };
 
-// inline void TheuerkaufPeak::SetMinMax(double min, double max)
+//  void TheuerkaufPeak::SetMinMax(double min, double max)
 // {
 //     assert(min < max);
 //     fXMin = min;
@@ -285,7 +285,7 @@ inline const TheuerkaufPeak::ParamState TheuerkaufPeak::GetState(int index) cons
 //     fFcn->SetRange(min, max);
 // };
 
-inline void TheuerkaufPeak::Print() const
+void TheuerkaufPeak::Print() const
 {
     std::cout << std::endl;
     std::cout << "TheuerkaufPeak model, peakID " << fId << std::endl;
@@ -312,7 +312,7 @@ inline void TheuerkaufPeak::Print() const
     std::cout << std::endl;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double val, ParamState prop, double min, double max)
 {
     assert(prop != NONE);
     assert(val >= min && val <= max);
@@ -339,7 +339,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Volume(double val, ParamStat
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double val, ParamState prop, double min, double max)
 {
     assert(prop != NONE && prop != SAME);
     if (min < fXMin)
@@ -373,7 +373,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Position(double val, ParamSt
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
@@ -406,7 +406,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_Sigma(double val, ParamState
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
@@ -442,7 +442,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailLeft(double val, ParamSt
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
@@ -476,7 +476,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_TailRight(double val, ParamS
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
@@ -516,7 +516,7 @@ inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepHeight(double val, Param
     return this;
 }
 
-inline TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepWidth(double val, ParamState prop, double min, double max)
+TheuerkaufPeak *TheuerkaufPeak::SetParameter_StepWidth(double val, ParamState prop, double min, double max)
 {
     assert(val >= min && val <= max);
 
@@ -854,7 +854,7 @@ const int TheuerkaufFitter::GetNPeaks()
     return fPeaks.size();
 }
 
-inline TheuerkaufFitter *TheuerkaufFitter::SetRange(double min, double max)
+TheuerkaufFitter *TheuerkaufFitter::SetRange(double min, double max)
 {
     fXMin = min;
     fXMax = max;
@@ -1154,10 +1154,19 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         j++;
     }
 
-    // gPad->SetTopMargin(0.05);
-    // gPad->SetBottomMargin(0.02);
-    // gPad->SetLeftMargin(0.1);
-    // gPad->SetRightMargin(0.01);
+    // calculate the confidence intervals and the subtracted histogram
+    std::shared_ptr<TH1> fit_confidence_histo95((TH1 *)_h->Clone());
+    fit_confidence_histo95->SetName(GetFuncUniqueName("fit_confidence", fit_confidence_histo95.get()).c_str());
+    fit_confidence_histo95->SetTitle("95% confidence band");
+    fit_confidence_histo95->SetDirectory(0);
+    fit_confidence_histo95->SetFillColor(kRed);
+    fit_confidence_histo95->SetFillStyle(3002);
+    fit_confidence_histo95->SetLineWidth(0);
+    fit_confidence_histo95->Reset();
+    // legend->AddEntry(fit_confidence_histo95.get(), "95% confidence band", "f");
+    // this->GetConfidenceIntervals(fit_confidence_histo95.get(), 0.95);
+    this->GetConfidenceIntervals(fit_confidence_histo95.get(), 0.95);
+    fit_confidence_histo95->ResetStats();
 
     // set XY ranges for the histogram and the canvas 1
     double yMin = std::numeric_limits<double>::max(), yMax = std::numeric_limits<double>::min();
@@ -1197,6 +1206,13 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     _h->Draw("HIST");
     sum_fcn_hist->Draw("SAME");
     tot_bcg_hist->Draw("SAME");
+    fit_confidence_histo95->Draw("SAME E3");
+    can->cd(1);
+
+    TLegend *legend1 = new TLegend(0.80, 0.7, 0.99, 0.99);
+    legend1->AddEntry(sum_fcn_hist.get(), "Full fit function", "l");
+    legend1->AddEntry(tot_bcg_hist.get(), "Background", "f");
+    legend1->AddEntry(fit_confidence_histo95.get(), "95% confidence band", "f");
 
     // draw function representations
     std::for_each(fTempPeaks.begin(), fTempPeaks.end(), [&](auto &peak) {
@@ -1213,29 +1229,20 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         fcn_hist->SetLineStyle(fcn->GetLineStyle());
         fcn_hist->SetLineWidth(fcn->GetLineWidth());
         fcn_hist->Draw("SAME HIST L");
+        std::string peak_name = "Peak " + std::to_string(peak->GetPos()) + " keV";
+        legend1->AddEntry(fcn_hist.get(), peak_name.c_str(), "l");
     });
 
+    legend1->Draw("SAME");
+
     /// Switch focus to second pad for the analysis of the fit - prepare histograms for it
-    TLegend *legend = new TLegend(0.80, 0.8, 0.99, 0.99);
+    TLegend *legend2 = new TLegend(0.80, 0.85, 0.99, 0.99);
     // create histogram of residuals
     std::shared_ptr<TH1> subtracted_histo((TH1 *)_h->Clone());
     subtracted_histo->SetName(GetFuncUniqueName("subtracted_histo", subtracted_histo.get()).c_str());
     subtracted_histo->SetTitle("Residuals");
     subtracted_histo->SetDirectory(0);
-    legend->AddEntry(subtracted_histo.get(), "Residuals", "l");
-
-    // calculate the confidence intervals and the subtracted histogram
-    std::shared_ptr<TH1> fit_confidence_histo95((TH1 *)_h->Clone());
-    fit_confidence_histo95->SetName(GetFuncUniqueName("fit_confidence", fit_confidence_histo95.get()).c_str());
-    fit_confidence_histo95->SetTitle("95% confidence band");
-    fit_confidence_histo95->SetDirectory(0);
-    fit_confidence_histo95->SetFillColor(kRed);
-    fit_confidence_histo95->SetFillStyle(3002);
-    fit_confidence_histo95->SetLineWidth(0);
-    fit_confidence_histo95->Reset();
-    legend->AddEntry(fit_confidence_histo95.get(), "95% confidence band", "f");
-    // this->GetConfidenceIntervals(fit_confidence_histo95.get(), 0.95);
-    this->GetConfidenceIntervals(fit_confidence_histo95.get(), 0.95);
+    legend2->AddEntry(subtracted_histo.get(), "Residuals", "l");
 
     // create 2 sigma interval around the residuals
     std::shared_ptr<TH1> sigma_histo_plus((TH1 *)_h->Clone());
@@ -1243,7 +1250,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     sigma_histo_plus->SetTitle("95% statistical error band");
     sigma_histo_plus->SetDirectory(0);
     sigma_histo_plus->Reset();
-    legend->AddEntry(sigma_histo_plus.get(), "95% statistical error band", "l");
+    legend2->AddEntry(sigma_histo_plus.get(), "95% statistical error band", "l");
 
     std::shared_ptr<TH1> sigma_histo_minus((TH1 *)_h->Clone());
     sigma_histo_minus->SetName(GetFuncUniqueName("_sigma_histo_minus", sigma_histo_minus.get()).c_str());
@@ -1259,7 +1266,6 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         double high_edge = subtracted_histo->GetXaxis()->GetBinUpEdge(i);
         double fcn_integral = fSumFunc->Integral(low_edge, high_edge) * normalization;
         subtracted_histo->SetBinContent(i, subtracted_histo->GetBinContent(i) - fcn_integral);
-        fit_confidence_histo95->SetBinContent(i, fit_confidence_histo95->GetBinContent(i) - fcn_integral);
     }
 
     // set range
@@ -1268,11 +1274,10 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         sigma_histo_plus->SetBinContent(i, 2. * sqrt(_h->GetBinContent(i)));
         sigma_histo_minus->SetBinContent(i, -2. * sqrt(_h->GetBinContent(i)));
     }
-    sigma_histo_plus->SetLineColor(kBlack);
-    sigma_histo_minus->SetLineColor(kBlack);
+    sigma_histo_plus->SetLineColor(kRed);
+    sigma_histo_minus->SetLineColor(kRed);
 
     subtracted_histo->ResetStats();
-    fit_confidence_histo95->ResetStats();
     sigma_histo_plus->ResetStats();
     sigma_histo_minus->ResetStats();
 
@@ -1303,11 +1308,10 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     sigma_histo_plus->Draw("HIST");
     subtracted_histo->Draw("SAME");
     sigma_histo_minus->Draw("SAME");
-    fit_confidence_histo95->Draw("SAME E3");
 
     can->SetCrosshair(true);
     can->Update();
-    legend->Draw("SAME");
+    legend2->Draw("SAME");
 
     // gPad->RedrawAxis();
     // can->RangeChanged();
