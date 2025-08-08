@@ -1288,7 +1288,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
 
     double maxY = maxY_sub > maxY_sig ? maxY_sub * 1.1 : maxY_sig * 1.1;
     double minY = minY_sub < minY_sig ? minY_sub * 1.1 : minY_sig * 1.1;
-    // double range = abs(maxY) > abs(minY) ? abs(maxY) : abs(minY);
+    // double range = std::fabs(maxY) > std::fabs(minY) ? std::fabs(maxY) : std::fabs(minY);
     subtracted_histo->SetMinimum(minY);
     subtracted_histo->SetMaximum(maxY);
     sigma_histo_minus->SetMinimum(minY);
@@ -1798,7 +1798,7 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
     sumAmp = sumAmp / fTempHist->GetXaxis()->GetBinWidth(1);
 
     // Second: calculate average peak width (sigma)
-    double avgSigma = std::abs(sumVol / (sumAmp * std::sqrt(2. * M_PI)));
+    double avgSigma = std::fabs(sumVol / (sumAmp * std::sqrt(2. * M_PI)));
     if (fVerbose > 2)
         std::cout << "sumvVol " << sumVol << " sumAmp " << sumAmp << " " << std::endl;
     if (fVerbose > 2)
