@@ -1206,13 +1206,13 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     _h->Draw("HIST");
     sum_fcn_hist->Draw("SAME");
     tot_bcg_hist->Draw("SAME");
-    fit_confidence_histo95->Draw("SAME E3");
+    // fit_confidence_histo95->Draw("SAME E3");
     can->cd(1);
 
     TLegend *legend1 = new TLegend(0.80, 0.7, 0.99, 0.99);
     legend1->AddEntry(sum_fcn_hist.get(), "Full fit function", "l");
     legend1->AddEntry(tot_bcg_hist.get(), "Background", "f");
-    legend1->AddEntry(fit_confidence_histo95.get(), "95% confidence band", "f");
+    // legend1->AddEntry(fit_confidence_histo95.get(), "95% confidence band", "f");
 
     // draw function representations
     std::for_each(fTempPeaks.begin(), fTempPeaks.end(), [&](auto &peak) {
