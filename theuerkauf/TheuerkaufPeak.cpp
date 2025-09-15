@@ -1128,7 +1128,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     sum_fcn_hist->SetName(GetFuncUniqueName("_sum_fcn_hist", sum_fcn_hist.get()).c_str());
     sum_fcn_hist->SetDirectory(0);
     sum_fcn_hist->SetLineColor(kViolet);
-    sum_fcn_hist->SetLineWidth(1);
+    sum_fcn_hist->SetLineWidth(2);
 
     // We consider the step to be a background, so we need to remove it from the peaks by zeroing the Parameters. In
     // order not to mess with the parameters of the peaks, we need to make a temporary deep copy of them and work our
@@ -1147,8 +1147,8 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         fcn->SetParameter(6, 0);
 
         fcn->SetLineColor(GetColor(j + 2));
-        fcn->SetLineStyle(2);
-        fcn->SetLineWidth(5);
+        // fcn->SetLineStyle(2);
+        fcn->SetLineWidth(1);
         fcn->SetNpx(fcn_npx);
 
         j++;
@@ -1197,11 +1197,18 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     yMin *= 0.9;
     yMax *= 1.1;
 
+    can->cd(1);
+
+    if (yMin >= 0 && yMax > 0)
+    {
+        gPad->SetLogy(true);
+        yMin = yMin > 1 ? yMin : 0.1;
+    }
+
     _h->GetXaxis()->SetRangeUser(fXMin, fXMax);
     _h->GetYaxis()->SetRangeUser(yMin, yMax);
     _h->SetTitle(";Energy [keV];Counts");
 
-    can->cd(1);
     gPad->SetLogy(true);
     _h->Draw("HIST");
     sum_fcn_hist->Draw("SAME");
@@ -1229,7 +1236,11 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         fcn_hist->SetLineStyle(fcn->GetLineStyle());
         fcn_hist->SetLineWidth(fcn->GetLineWidth());
         fcn_hist->Draw("SAME HIST L");
-        std::string peak_name = "Peak " + std::to_string(peak->GetPos()) + " keV";
+
+        std::ostringstream oss;
+        oss << "Peak " << std::fixed << std::setprecision(2) << peak->GetPos() << " keV";
+        std::string peak_name = oss.str();
+        // std::string peak_name = "Peak " + std::to_string(peak->GetPos()) + " keV";
         legend1->AddEntry(fcn_hist.get(), peak_name.c_str(), "l");
     });
 
@@ -1247,10 +1258,10 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     // create 2 sigma interval around the residuals
     std::shared_ptr<TH1> sigma_histo_plus((TH1 *)_h->Clone());
     sigma_histo_plus->SetName(GetFuncUniqueName("_sigma_histo_plus", sigma_histo_plus.get()).c_str());
-    sigma_histo_plus->SetTitle("95% statistical error band");
+    sigma_histo_plus->SetTitle("95% statistical uncertainty band (2#sqrt{N})");
     sigma_histo_plus->SetDirectory(0);
     sigma_histo_plus->Reset();
-    legend2->AddEntry(sigma_histo_plus.get(), "95% statistical error band", "l");
+    legend2->AddEntry(sigma_histo_plus.get(), "95% statistical uncertainty band (2#sqrt{N})", "l");
 
     std::shared_ptr<TH1> sigma_histo_minus((TH1 *)_h->Clone());
     sigma_histo_minus->SetName(GetFuncUniqueName("_sigma_histo_minus", sigma_histo_minus.get()).c_str());
@@ -1274,6 +1285,22 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         sigma_histo_plus->SetBinContent(i, 2. * sqrt(_h->GetBinContent(i)));
         sigma_histo_minus->SetBinContent(i, -2. * sqrt(_h->GetBinContent(i)));
     }
+
+    // calculate residuals over the 95% statistical error band
+    int counter_tot = 0;
+    int counter_out = 0;
+    for (int i = _h->FindBin(fXMin); i < _h->FindBin(fXMax); i++)
+    {
+        counter_tot++;
+        if (subtracted_histo->GetBinContent(i) > sigma_histo_plus->GetBinContent(i) ||
+            subtracted_histo->GetBinContent(i) < sigma_histo_minus->GetBinContent(i))
+        {
+            counter_out++;
+        }
+    }
+    float frac_in = 100 - 100. * (float)counter_out / (float)counter_tot;
+    legend2->AddEntry((TObject *)0, Form("(%.1f%%) bins within 95%% band", frac_in), "");
+
     sigma_histo_plus->SetLineColor(kRed);
     sigma_histo_minus->SetLineColor(kRed);
 
@@ -1293,6 +1320,8 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     subtracted_histo->SetMaximum(maxY);
     sigma_histo_minus->SetMinimum(minY);
     sigma_histo_minus->SetMaximum(maxY);
+    subtracted_histo->SetMinimum(minY);
+    subtracted_histo->SetMaximum(maxY);
 
     can->cd(2);
     // gPad->SetTopMargin(0.02);
@@ -1874,12 +1903,12 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
         int i_sig = peak->GetIndex_Sigma();
         int i_tl = peak->GetIndex_TailLeft();
         int i_tr = peak->GetIndex_TailRight();
-        int i_sh = peak->GetIndex_StepWidth();
-        int i_sw = peak->GetIndex_StepHeight();
+        int i_sw = peak->GetIndex_StepWidth();
+        int i_sh = peak->GetIndex_StepHeight();
 
         if (fVerbose > 1)
             std::cout << "peak " << peak->GetID() << " i_vol " << i_vol << " i_pos " << i_pos << " i_sig " << i_sig
-                      << " i_tl " << i_tl << " i_tr " << i_tr << " i_sw " << i_sw << " i_sh " << i_sh << std::endl;
+                      << " i_tl " << i_tl << " i_tr " << i_tr << " i_sh " << i_sh << " i_sw " << i_sw << std::endl;
 
         double amp = *(ampIter++);
 
@@ -1925,9 +1954,9 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
         {
             fSumFunc->ReleaseParameter(i_sh);
             fSumFunc->ReleaseParameter(i_sw);
-            fSumFunc->SetParameter(i_sh, avgFreeStep / (amp * M_PI));
-            // fSumFunc->SetParLimits(i_sh, -10, 10);
-            // fSumFunc->SetParLimits(i_sw, -10, 10);
+
+            fSumFunc->SetParameter(i_sw, 1);
+            fSumFunc->SetParLimits(i_sw, 0, 5);
         }
     }
 
