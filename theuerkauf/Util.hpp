@@ -69,7 +69,7 @@ inline Color_t GetColor(int get_color_index = -1, std::string hex_color = "")
 {
     static std::mutex __getcolor__mtx;
     std::lock_guard<std::mutex> lock(__getcolor__mtx);
-    static int ___color_index = 0;
+    static unsigned int ___color_index = 0;
     static std::vector<std::string> ___color_array{
         "#2196f3", "#f44336", "#3f51b5", "#4caf50", "#ff9800", "#000000", "#e91e63", "#8bc34a", "#ff5722", "#795548",
         "#607d8b", "#9c27b0", "#00bcd4", "#ffeb3b", "#673ab7", "#03a9f4", "#009688", "#cddc39", "#ffc107", "#9e9e9e"};
@@ -78,7 +78,7 @@ inline Color_t GetColor(int get_color_index = -1, std::string hex_color = "")
     if (get_color_index > 0 && get_color_index < static_cast<int>(___color_array.size()))
         ___color_index = get_color_index;
 
-    int index = ___color_index;
+    unsigned int index = ___color_index;
     ___color_index = ___color_index + 1 == ___color_array.size() ? 0 : ___color_index + 1;
     Color_t c = TColor::GetColor(___color_array[index].c_str());
     return c;

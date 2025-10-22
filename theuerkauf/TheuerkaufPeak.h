@@ -55,18 +55,18 @@ class TheuerkaufPeak
 
     void Print() const;
 
-    const int GetID() const noexcept
+    int GetID() const noexcept
     {
         return fId;
     };
 
-    const int GetIndex_Volume() const noexcept;
-    const int GetIndex_Position() const noexcept;
-    const int GetIndex_Sigma() const noexcept;
-    const int GetIndex_TailLeft() const noexcept;
-    const int GetIndex_TailRight() const noexcept;
-    const int GetIndex_StepHeight() const noexcept;
-    const int GetIndex_StepWidth() const noexcept;
+    int GetIndex_Volume() const noexcept;
+    int GetIndex_Position() const noexcept;
+    int GetIndex_Sigma() const noexcept;
+    int GetIndex_TailLeft() const noexcept;
+    int GetIndex_TailRight() const noexcept;
+    int GetIndex_StepHeight() const noexcept;
+    int GetIndex_StepWidth() const noexcept;
 
     void Draw(std::string options = "")
     {
@@ -159,106 +159,106 @@ class TheuerkaufPeak
 
     TheuerkaufPeak *SetRange(double min, double max);
 
-    const ParamState GetState(int index) const;
-    const ParamState GetState_Volume() const noexcept
+    ParamState GetState(int index) const;
+    ParamState GetState_Volume() const noexcept
     {
         return fParamState[0];
     };
-    const ParamState GetState_Position() const noexcept
+    ParamState GetState_Position() const noexcept
     {
         return fParamState[1];
     };
-    const ParamState GetState_Sigma() const noexcept
+    ParamState GetState_Sigma() const noexcept
     {
         return fParamState[2];
     };
-    const ParamState GetState_TailLeft() const noexcept
+    ParamState GetState_TailLeft() const noexcept
     {
         return fParamState[3];
     };
-    const ParamState GetState_TailRight() const noexcept
+    ParamState GetState_TailRight() const noexcept
     {
         return fParamState[4];
     };
-    const ParamState GetState_StepHeight() const noexcept
+    ParamState GetState_StepHeight() const noexcept
     {
         return fParamState[5];
     };
-    const ParamState GetState_StepWidth() const noexcept
+    ParamState GetState_StepWidth() const noexcept
     {
         return fParamState[6];
     };
 
-    const double GetVol() const noexcept
+    double GetVol() const noexcept
     {
         return fHistBinning_normalization <= 0 ? fFcn->GetParameter(0)
                                                : fFcn->GetParameter(0) * fHistBinning_normalization;
         // return fFcn->GetParameter(0);
     };
-    const double GetPos() const noexcept
+    double GetPos() const noexcept
     {
         return fFcn->GetParameter(1);
     };
-    const double GetSig() const noexcept
+    double GetSig() const noexcept
     {
         return fFcn->GetParameter(2);
     };
-    const double GetTL() const noexcept
+    double GetTL() const noexcept
     {
         return fFcn->GetParameter(3);
     };
-    const double GetTR() const noexcept
+    double GetTR() const noexcept
     {
         return fFcn->GetParameter(4);
     };
-    const double GetSH() const noexcept
+    double GetSH() const noexcept
     {
         return fFcn->GetParameter(5);
     };
-    const double GetSW() const noexcept
+    double GetSW() const noexcept
     {
         return fFcn->GetParameter(6);
     };
 
-    const double GetFWHM() const noexcept
+    double GetFWHM() const noexcept
     {
         return sig_to_fwhm * this->GetSig();
     };
 
     // get width at x-th maximum (x=2 for FWHM, x=10 for FW at tenth maximum etc.)
-    const double GetFWxM(const double width_multiple);
+    double GetFWxM(const double width_multiple);
 
-    const double GetVolErr() const noexcept
+    double GetVolErr() const noexcept
     {
         return fHistBinning_normalization <= 0 ? fFcn->GetParError(0)
                                                : fFcn->GetParError(0) * fHistBinning_normalization;
     };
-    const double GetPosErr() const noexcept
+    double GetPosErr() const noexcept
     {
         return fFcn->GetParError(1);
     };
-    const double GetSigErr() const noexcept
+    double GetSigErr() const noexcept
     {
         return fFcn->GetParError(2);
     };
-    const double GetTLErr() const noexcept
+    double GetTLErr() const noexcept
     {
         return fFcn->GetParError(3);
     };
-    const double GetTRErr() const noexcept
+    double GetTRErr() const noexcept
     {
         return fFcn->GetParError(4);
     };
-    const double GetSHErr() const noexcept
+    double GetSHErr() const noexcept
     {
         return fFcn->GetParError(5);
     };
-    const double GetSWErr() const noexcept
+    double GetSWErr() const noexcept
     {
         return fFcn->GetParError(6);
     };
 
-    const double GetFWHMErr() const noexcept
+    double GetFWHMErr() const noexcept
     {
         return sig_to_fwhm * this->GetSigErr();
     };
@@ -268,7 +268,7 @@ class TheuerkaufPeak
     {
         fHistBinning_normalization = 1. / energy_per_bin;
     };
-    const double GetBinning() const noexcept
+    double GetBinning() const noexcept
     {
         return 1. / fHistBinning_normalization;
     };
@@ -281,7 +281,7 @@ class TheuerkaufPeak
 
     int fId;
     double fXMin, fXMax;
-    bool fHasStep, fHasLeftTail, fHasRightTail;
+    bool fHasLeftTail, fHasRightTail, fHasStep;
     TF1 *fFcn;
     double fHistBinning_normalization{-1.}; // necessary to get the real volume, cleared of the
 
@@ -310,13 +310,13 @@ class TheuerkaufFitter
     /// @param rightTail has right tail?
     /// @param step has step?
     /// @return id of the peak
-    const int AddPeak(const double position, const bool leftTail, const bool rightTail, const bool step);
+    int AddPeak(const double position, const bool leftTail, const bool rightTail, const bool step);
 
     /// @brief This function will create a copy of the peak and set id to one of the
     /// internal structure
     /// @param peak
     /// @return id of added peak
-    const int AddPeak(const TheuerkaufPeak &peak);
+    int AddPeak(const TheuerkaufPeak &peak);
     TheuerkaufFitter *SetBackground(std::unique_ptr<TF1> &bcg_fcn) noexcept;
 
     /// @brief get peak based on its ID
@@ -326,7 +326,7 @@ class TheuerkaufFitter
 
     /// @brief Get number of peaks
     /// @return
-    const int GetNPeaks();
+    int GetNPeaks();
 
     /// @brief Set internal polynomial background
     /// @param poly_order number of parameters (poly_order=0 no background, poly_order=3
@@ -411,7 +411,7 @@ class TheuerkaufFitter
 
   private:
     double EvalTotalBackground(const double *x, const double *p);
-    const int GetNumParams() const noexcept
+    int GetNumParams() const noexcept
     {
         return static_cast<int>(fPeaks.size() * 7 + fPolyBcgDegree);
     };
@@ -425,8 +425,6 @@ class TheuerkaufFitter
     bool fOnlypositivepeaks;
     unsigned int fPolyBcgDegree;
     TFitResultPtr fFitResults;
-    /// @brief points to the fitter following the main Fit
-    TVirtualFitter *fFitter;
 
     std::shared_ptr<TF1> fSumFunc;
     std::unique_ptr<TF1> fBcgFunc;
