@@ -1084,11 +1084,11 @@ double TheuerkaufFitter::GetMaximumInRange(const std::shared_ptr<TH1> h, double 
     return max;
 }
 
-void TheuerkaufFitter::Analyze(TH1 *histAna)
+TCanvas *TheuerkaufFitter::Analyze(TH1 *histAna)
 {
     assert(histAna && "Histogram for analysis must not be null!");
     if (!fSumFunc)
-        return;
+        return nullptr;
     fTempObjects.clear();
     fTempPeaks.clear();
 
@@ -1120,7 +1120,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
         _h->SetDirectory(0);
         // subtracted histo is not resetted here, so we need to clean the list of functions attached to it
         ClearListOfFunctions(_h.get());
-        _h->Draw();
+        // _h->Draw();
     }
 
     // create histogram out of a background function
@@ -1211,6 +1211,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     yMax *= 1.1;
 
     can->cd(1);
+    // gPad->Clear();
 
     if (yMin >= 0 && yMax > 0)
     {
@@ -1222,7 +1223,7 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     _h->GetYaxis()->SetRangeUser(yMin, yMax);
     _h->SetTitle(";Energy [keV];Counts");
 
-    gPad->SetLogy(true);
+    // gPad->SetLogy(true);
     _h->Draw("HIST");
     sum_fcn_hist->Draw("SAME");
     tot_bcg_hist->Draw("SAME");
@@ -1373,6 +1374,8 @@ void TheuerkaufFitter::Analyze(TH1 *histAna)
     fTempObjects.emplace_back(subtracted_histo);
     fTempObjects.emplace_back(sigma_histo_minus);
     fTempObjects.emplace_back(sigma_histo_plus);
+
+    return can;
 }
 
 void TheuerkaufFitter::HandleParameterStates()
@@ -2079,7 +2082,7 @@ void TheuerkaufFitter::GetConfidenceIntervals(TH1 *hfit, double cl)
 void TheuerkaufFitter::GetConfidenceIntervals(unsigned int n, const double *x, double *ci, double cl, bool norm)
 {
     unsigned int stride1 = 1;
-    unsigned int stride2 = 0;
+    unsigned int stride2 = 1;
     // stride1 stride in coordinate  stride2 stride in dimension space
     // i.e. i-th point in k-dimension is x[ stride1 * i + stride2 * k]
     // compute the confidence interval of the fit on the given data points

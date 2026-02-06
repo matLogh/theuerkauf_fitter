@@ -380,7 +380,7 @@ class TheuerkaufFitter
     /// bands
     /// @param histAna
     /// @param toPrint
-    void Analyze(TH1 *histAna);
+    TCanvas *Analyze(TH1 *histAna);
 
     /// @brief Draws the fit function and the background function.
     /// @param hist histogram to be drawn - if set tu nullptr it is assumed that histogram is already plotted. If
