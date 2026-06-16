@@ -45,7 +45,7 @@ TheuerkaufPeak &TheuerkaufPeak::operator=(const TheuerkaufPeak &other)
 
         std::string fcn_name = "theurekauf_" + std::to_string(fId);
         this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin,
-                             fXMax, 7, "TheuerkaufPeak", "Eval");
+                             fXMax, 7);
         fFcn->SetBit(kCanDelete);
 
         this->fFcn->SetNpx(10000);
@@ -82,7 +82,7 @@ TheuerkaufPeak::TheuerkaufPeak(TheuerkaufPeak &&peak)
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
     this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
-                         7, "TheuerkaufPeak", "Eval");
+                         7);
     fFcn->SetBit(kCanDelete);
 
     this->fFcn->SetNpx(10000);
@@ -117,7 +117,7 @@ TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak &peak)
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
     this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
-                         7, "TheuerkaufPeak", "Eval");
+                         7);
     fFcn->SetBit(kCanDelete);
 
     this->fFcn->SetNpx(10000);
@@ -154,7 +154,7 @@ TheuerkaufPeak::TheuerkaufPeak(const TheuerkaufPeak *peak)
     // we need to make a new function to reference the ::Eval of THIS member
     std::string fcn_name = "theurekauf_" + std::to_string(fId);
     this->fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, fXMin, fXMax,
-                         7, "TheuerkaufPeak", "Eval");
+                         7);
     fFcn->SetBit(kCanDelete);
 
     this->fFcn->SetNpx(10000);
@@ -174,8 +174,7 @@ TheuerkaufPeak::TheuerkaufPeak(double min, double max, int id, bool hasTL, bool 
 {
     assert(id >= 0);
     std::string fcn_name = "theurekauf_" + std::to_string(id);
-    fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, min, max, 7,
-                   "TheuerkaufFitter", "Eval");
+    fFcn = new TF1(GetFuncUniqueName(fcn_name.c_str(), this).c_str(), this, &TheuerkaufPeak::Eval, min, max, 7);
     fFcn->SetBit(kCanDelete);
 
     fFcn->SetNpx(10000);
@@ -994,8 +993,7 @@ void TheuerkaufFitter::DrawFit(TH1 *hist, TVirtualPad *toPrint)
 
     // create histogram out of a background function
     auto tot_bcg_fcn = std::make_unique<TF1>(GetFuncUniqueName("total_bcg", this).c_str(), this,
-                                             &TheuerkaufFitter::EvalTotalBackground, fXMin, fXMax, num_params,
-                                             "TheuerkaufFitter", "EvalTotalBackground");
+                                             &TheuerkaufFitter::EvalTotalBackground, fXMin, fXMax, num_params);
     tot_bcg_fcn->SetNpx(fcn_npx);
     tot_bcg_fcn->SetParameters(fSumFunc->GetParameters());
     std::shared_ptr<TH1> tot_bcg_hist(dynamic_cast<TH1 *>(tot_bcg_fcn->GetHistogram()->Clone()));
@@ -1125,8 +1123,7 @@ TCanvas *TheuerkaufFitter::Analyze(TH1 *histAna)
 
     // create histogram out of a background function
     auto tot_bcg_fcn = std::make_unique<TF1>(GetFuncUniqueName("total_bcg", this).c_str(), this,
-                                             &TheuerkaufFitter::EvalTotalBackground, fXMin, fXMax, num_params,
-                                             "TheuerkaufFitter", "EvalTotalBackground");
+                                             &TheuerkaufFitter::EvalTotalBackground, fXMin, fXMax, num_params);
     tot_bcg_fcn->SetNpx(fcn_npx);
     tot_bcg_fcn->SetParameters(fSumFunc->GetParameters());
     std::shared_ptr<TH1> tot_bcg_hist((TH1 *)tot_bcg_fcn->GetHistogram()->Clone());
@@ -1626,7 +1623,7 @@ void TheuerkaufFitter::Fit(TH1 *histFit, std::string options)
 
     // Create fit function
     fSumFunc = std::make_unique<TF1>(GetFuncUniqueName("fSumFunc", this).c_str(), this, &TheuerkaufFitter::Eval, fXMin,
-                                     fXMax, num_params, "TheuerkaufFitter", "Eval");
+                                     fXMax, num_params);
     int nbins = fTempHist->FindBin(fXMax) - fTempHist->FindBin(fXMin);
     fSumFunc->SetNpx(nbins * 10);
     // set bcg params names
