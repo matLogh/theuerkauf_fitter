@@ -13,8 +13,8 @@
 
 inline std::string GetFuncUniqueName(const char *prefix, void *ptr)
 {
-    static int ___num = 0;
-    static std::mutex __getfunctuniquename__mtx;
+    static int                  ___num = 0;
+    static std::mutex           __getfunctuniquename__mtx;
     std::lock_guard<std::mutex> lock(__getfunctuniquename__mtx);
 
     std::ostringstream name;
@@ -25,10 +25,10 @@ inline std::string GetFuncUniqueName(const char *prefix, void *ptr)
 
 inline double TH1IntegrateWithPartialBins(const TH1 *spec, const double xmin, const double xmax)
 {
-    const TAxis *axis = spec->GetXaxis();
-    const int bmin = axis->FindBin(xmin);
-    const int bmax = axis->FindBin(xmax);
-    double integral = spec->Integral(bmin, bmax);
+    const TAxis *axis     = spec->GetXaxis();
+    const int    bmin     = axis->FindBin(xmin);
+    const int    bmax     = axis->FindBin(xmax);
+    double       integral = spec->Integral(bmin, bmax);
     integral -= spec->GetBinContent(bmin) * (xmin - axis->GetBinLowEdge(bmin)) / axis->GetBinWidth(bmin);
     integral -= spec->GetBinContent(bmax) * (axis->GetBinUpEdge(bmax) - xmax) / axis->GetBinWidth(bmax);
     return integral;
@@ -67,20 +67,18 @@ inline bool isValidHexColor(const std::string &input)
 /// @return color_t used by ROOT (but it is just Int_t)
 inline Color_t GetColor(int get_color_index = -1, std::string hex_color = "")
 {
-    static std::mutex __getcolor__mtx;
-    std::lock_guard<std::mutex> lock(__getcolor__mtx);
-    static unsigned int ___color_index = 0;
-    static std::vector<std::string> ___color_array{
-        "#2196f3", "#f44336", "#3f51b5", "#4caf50", "#ff9800", "#000000", "#e91e63", "#8bc34a", "#ff5722", "#795548",
-        "#607d8b", "#9c27b0", "#00bcd4", "#ffeb3b", "#673ab7", "#03a9f4", "#009688", "#cddc39", "#ffc107", "#9e9e9e"};
-    if (!hex_color.empty() && isValidHexColor(hex_color))
-        ___color_array.emplace_back(hex_color);
-    if (get_color_index > 0 && get_color_index < static_cast<int>(___color_array.size()))
-        ___color_index = get_color_index;
+    static std::mutex               __getcolor__mtx;
+    std::lock_guard<std::mutex>     lock(__getcolor__mtx);
+    static unsigned int             ___color_index = 0;
+    static std::vector<std::string> ___color_array{"#2196f3", "#f44336", "#3f51b5", "#4caf50", "#ff9800", "#000000", "#e91e63",
+                                                   "#8bc34a", "#ff5722", "#795548", "#607d8b", "#9c27b0", "#00bcd4", "#ffeb3b",
+                                                   "#673ab7", "#03a9f4", "#009688", "#cddc39", "#ffc107", "#9e9e9e"};
+    if (!hex_color.empty() && isValidHexColor(hex_color)) ___color_array.emplace_back(hex_color);
+    if (get_color_index > 0 && get_color_index < static_cast<int>(___color_array.size())) ___color_index = static_cast<unsigned int>(get_color_index);
 
     unsigned int index = ___color_index;
-    ___color_index = ___color_index + 1 == ___color_array.size() ? 0 : ___color_index + 1;
-    Color_t c = TColor::GetColor(___color_array[index].c_str());
+    ___color_index     = ___color_index + 1 == ___color_array.size() ? 0 : ___color_index + 1;
+    Color_t c          = static_cast<Color_t>(TColor::GetColor(___color_array[index].c_str()));
     return c;
 }
 
@@ -88,13 +86,12 @@ inline Color_t GetColor(int get_color_index = -1, std::string hex_color = "")
 /// @param h
 inline void ClearListOfFunctions(TH1 *h)
 {
-    if (h == nullptr)
-        return;
+    if (h == nullptr) return;
     TList *list = h->GetListOfFunctions();
     if (list != nullptr)
     {
 
-        TIter iter(list);
+        TIter    iter(list);
         TObject *obj = nullptr;
         while ((obj = iter()))
         {
